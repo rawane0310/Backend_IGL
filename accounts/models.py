@@ -66,8 +66,8 @@ class Technician(models.Model):
     nom = models.CharField(max_length=50)
     prenom = models.CharField(max_length=50)
     role = models.CharField(max_length=50)
-    specialite = models.CharField(max_length=100)
-    outils = models.JSONField()  # List des tools comme chaine de car
+    specialite = models.CharField(max_length=100, blank=True, null=True)
+    outils = models.JSONField(blank=True, null=True)  # List des tools comme chaine de car
 
 # Patient model
 class Patient(models.Model):
@@ -90,7 +90,7 @@ class Patient(models.Model):
 class Ordonnance(models.Model):
     date = models.DateField()
     
-    validation = models.BooleanField(default=False)   # is validated 
+    validation = models.BooleanField(default=False)   
 
 class DossierPatient(models.Model):
     
@@ -102,7 +102,7 @@ class SoinInfermier(models.Model):
     date = models.DateField()
     infirmier = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='soins_infirmiers',null=True)
     
-    observation = models.TextField()
+    observation = models.TextField(blank=True, null=True)
     soin_realise = models.TextField()
     dossier = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='soins_infirmiers')
 
@@ -112,8 +112,8 @@ class Medicament(models.Model):
     dose = models.CharField(max_length=50)
     frequence = models.CharField(max_length=50)
     duree = models.CharField(max_length=50)
-    ordonnance = models.ForeignKey(Ordonnance, on_delete=models.CASCADE, related_name='medicaments')
-    soin = models.ForeignKey(SoinInfermier, on_delete=models.CASCADE, related_name='medicaments')
+    ordonnance = models.ForeignKey(Ordonnance, on_delete=models.CASCADE, related_name='medicaments',null=True, blank=True)
+    soin = models.ForeignKey(SoinInfermier, on_delete=models.CASCADE, related_name='medicaments',null=True, blank=True)
 
 
     
@@ -123,11 +123,11 @@ class Medicament(models.Model):
 class Consultation(models.Model):
     date = models.DateField()
     medecin = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='consultations')
-    diagnostic = models.TextField()
-    resume = models.TextField()
-    ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True, related_name='consultations')
+    diagnostic = models.TextField(blank=True, null=True)
+    resume = models.TextField(blank=True, null=True)
+    ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
    
-    dossier = models.ForeignKey(DossierPatient , on_delete=models.CASCADE, related_name='consultations')  # New field
+    dossier = models.ForeignKey(DossierPatient , on_delete=models.CASCADE, related_name='consultations') 
 
 
 
@@ -150,9 +150,9 @@ class Certificat(models.Model):
 class ExamenRadiologique(models.Model):
     date = models.DateField()
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_radiologiques',null=True)
-    image = models.ImageField(upload_to='radiology_images/')
-    compte_rendu = models.TextField()
-    terminaison = models.BooleanField()
+    image = models.ImageField(upload_to='radiology_images/',blank=True, null=True)
+    compte_rendu = models.TextField(blank=True, null=True)
+    terminaison = models.BooleanField(default=False)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_radiologiques')
 
 
@@ -160,7 +160,7 @@ class ExamenBiologique(models.Model):
     date = models.DateField()
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)
     
-    terminaison = models.TextField()
+    terminaison = models.TextField(default=False)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_biologiques')
 
 
@@ -169,7 +169,7 @@ class ResultatExamen(models.Model):
     parametre = models.CharField(max_length=100)
     valeur = models.CharField(max_length=100)
     unite = models.CharField(max_length=50)
-    commentaire = models.TextField()
+    commentaire = models.TextField(blank=True, null=True)
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
 
