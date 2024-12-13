@@ -1,4 +1,4 @@
-""""
+
 from rest_framework import generics
 from .models import Patient , DossierPatient, Medicament , Ordonnance , SoinInfermier
 from .serializers import PatientSerializer, UserSerializer, DossierPatientSerializer , MedicamentSerializer , OrdonnanceSerializer , SoinInfermierSerializer
@@ -78,7 +78,5 @@ class DeleteMedicamentView(DestroyAPIView):
             # Appel de la méthode générique de suppression
             return super().delete(request, *args, **kwargs)
         except Medicament.DoesNotExist:
-            return Response({"detail": "Medicament non trouvé"}, status=status.HTTP_404_NOT_FOUND)            
-
-
-            """
+            return Response({"detail": "Medicament non trouvé"}, status=status.HTTP_404_NOT_FOUND)          
+            

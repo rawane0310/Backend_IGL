@@ -4,7 +4,6 @@ from django.urls import path
 # An empty urlpatterns list
 urlpatterns = []
 
-"""
 from django.urls import path
 from .views import CreatePatientView , CreateUserView, CreateDossierPatientView, CreateMedicamentView , CreateOrdonnanceView, CreateSoinInfermierView
 from .views import DeleteSoinInfermierView , DeleteMedicamentView
@@ -18,4 +17,3 @@ urlpatterns = [
     path('soin-infirmier/delete/<int:pk>/', DeleteSoinInfermierView.as_view(), name='delete_soin_infirmier'),
      path('medicament/delete/<int:pk>/', DeleteMedicamentView.as_view(), name='delete_medicament'),
 ]
-"""
