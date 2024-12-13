@@ -1,21 +1,17 @@
-# urls.py (app-level)
 from django.urls import path
+from .views import UserView , TechnicianView , PatientView , AdminView
 
-# An empty urlpatterns list
-urlpatterns = []
-
-"""
-from django.urls import path
-from .views import CreatePatientView , CreateUserView, CreateDossierPatientView, CreateMedicamentView , CreateOrdonnanceView, CreateSoinInfermierView
-from .views import DeleteSoinInfermierView , DeleteMedicamentView
 urlpatterns = [
-    path('patients/', CreatePatientView.as_view()),  # Endpoint pour l'ahout d'un patient
-    path('users/', CreateUserView.as_view(), name='create-user'),  # Create user endpoint
-    path('dossierpatients/', CreateDossierPatientView.as_view(), name='create-dossierpatient' ),
-    path('medicaments/', CreateMedicamentView.as_view(), name='create-medicament'),
-    path('ordonances/', CreateOrdonnanceView.as_view(), name='create-ordonance'),
-    path('soininfermiers/', CreateSoinInfermierView.as_view(), name='create-soininfermier'),
-    path('soin-infirmier/delete/<int:pk>/', DeleteSoinInfermierView.as_view(), name='delete_soin_infirmier'),
-     path('medicament/delete/<int:pk>/', DeleteMedicamentView.as_view(), name='delete_medicament'),
+    path('users/', UserView.as_view()),  # pour la creation (user)
+    path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
+
+    path('technicians/', TechnicianView.as_view()),  # For POST (creation)
+    path('technicians/<int:pk>/', TechnicianView.as_view()),  # For PUT and DELETE (modification & deletion)
+
+
+    path('admin/', AdminView.as_view()),  # For creating and listing admins
+    path('admin/<int:pk>/', AdminView.as_view()),  # For retrieving, updating, and deleting a specific admin
+    path('patient/' , PatientView.as_view() ),
+    path('patient/<int:patient_id>/', PatientView.as_view())  # For PUT and DELETE
+ 
 ]
-"""

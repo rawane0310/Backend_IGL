@@ -12,23 +12,50 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 
+
+from django.contrib.auth.models import BaseUserManager
+
+class CustomUserManager(BaseUserManager):
+    """
+    Custom user manager that supports user creation with only email, password, and role.
+    """
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("The Email field must be set")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if not extra_fields.get('is_staff'):
+            raise ValueError("Superuser must have is_staff=True.")
+        if not extra_fields.get('is_superuser'):
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self.create_user(email, password, **extra_fields)
+
+
 class User(AbstractUser):
-    email = models.EmailField(max_length=100, blank=True, null=True, unique=True)
+    username = None  # Remove the default username field
+    email = models.EmailField(max_length=100, unique=True)
     role = models.CharField(
         max_length=10, 
         choices=[('admin', 'Admin'), ('technicien', 'Technicien'), ('patient', 'Patient')], 
         default='admin'
-    )  # Set a default role for users
-    phone_number = models.CharField(max_length=10, blank=True, null=False)
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    last_login = models.DateTimeField(blank=True, null=True)  # Add last_login field
 
-    # Use email as the username field
+    # Use email as the primary identifier
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['email']  # Only email is required for user creation, remove 'username'
+    REQUIRED_FIELDS = []  # Only email is required for user creation
 
-    
+    # Add unique related_name for groups and permissions to avoid conflicts
     groups = models.ManyToManyField(
         Group,
         related_name='custom_user_set',  # Unique related_name to avoid conflicts
@@ -46,19 +73,22 @@ class User(AbstractUser):
         verbose_name='user permissions',
     )
 
-    def save(self, *args, **kwargs):
-        # Set the role to 'admin' for superusers if role is not set
-        if self.is_superuser and not self.role:
-            self.role = 'admin'
-        super().save(*args, **kwargs)
+    objects = CustomUserManager()  # Link to custom manager
 
-    
-
+    def __str__(self):
+        return self.email
 # User model
 #class User(AbstractUser):
  #   email = models.EmailField(unique=True)
   #password = models.CharField(max_length=128)
    # role = models.CharField(max_length=50)  #patient , technicien , admin 
+
+class Admin(models.Model):
+    nom = models.CharField(max_length=30)
+    prenom = models.CharField(max_length=30)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin')  # Corrected ForeignKey relationship
+
+
 
 # Technician model
 class Technician(models.Model):
@@ -80,7 +110,6 @@ class Patient(models.Model):
     mutuelle = models.CharField(max_length=100, blank=True, null=True)
     medecin_traitant = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='patients')
     personne_a_contacter = models.CharField(max_length=100)
-    
     nss = models.CharField(max_length=20) 
 
 
