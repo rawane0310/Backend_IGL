@@ -4,8 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from accounts.models import DossierPatient, Patient
-from .serializers import DossierPatientSerializer
+from .serializers import DossierPatientSerializer , PatientSerializer
 import qrcode
+
+from django.shortcuts import get_object_or_404
 import io
 import base64
 
@@ -81,3 +83,75 @@ class ModifierDossierAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
+    
+
+
+
+
+
+class DossierPatientSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get QR code content from the query parameters
+        qr_code_content = request.GET.get('qr', None)
+        
+        if not qr_code_content:
+            return Response({"detail": "QR code content is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Decode the QR code content
+            decoded_content = base64.b64decode(qr_code_content).decode('utf-8').strip()
+            
+            # Check if the decoded content has exactly two parts (id and name)
+            parts = decoded_content.split(' ')
+            if len(parts) != 2:
+                return Response({"detail": "Invalid QR code format. Expected 'patient_id patient_name'."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            patient_id, patient_name = parts
+
+            # Find the patient based on the decoded patient_id and patient_name
+            patient = get_object_or_404(Patient, id=patient_id, nom=patient_name)
+            
+            # Get the DossierPatient associated with the patient
+            dossier_patient = get_object_or_404(DossierPatient, patient=patient)
+            
+            # Serialize the patient and dossier details
+            dossier_serializer = DossierPatientSerializer(dossier_patient)
+            patient_serializer = PatientSerializer(patient)
+
+            # Combine both serialized data
+            response_data = {
+                "dossier": dossier_serializer.data,
+                "patient": patient_serializer.data,
+            }
+
+            return Response(response_data)
+        
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class PatientSearchByNSSView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get 'nss' from query parameters
+        nss = request.GET.get('nss', None)
+        
+        # Check if 'nss' is provided
+        if not nss:
+            return Response({"detail": "NSS is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Search for the patient by NSS
+            patient = Patient.objects.get(nss=nss)
+            
+            # Serialize the patient data using the PatientSerializer
+            patient_serializer = PatientSerializer(patient)
+            
+            # Return the patient data in the response
+            return Response(patient_serializer.data)
+        
+        except Patient.DoesNotExist:
+            return Response({"detail": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

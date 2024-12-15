@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'examens',
     'traitements',
     'consultations',
-    'qr_code',
+    'qrcode',
 ]
 
 MIDDLEWARE = [

@@ -134,3 +134,18 @@ class PatientSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return patient
+    
+
+
+
+
+
+
+
+#pour rechercher tech par role _ id 
+class TechnicianSerializerSearch(serializers.ModelSerializer):
+   # user_email = serializers.EmailField(write_only=True)
+
+    class Meta:
+        model = Technician
+        fields = "__all__"

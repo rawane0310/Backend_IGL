@@ -198,3 +198,33 @@ class AdminView(APIView):
 
         admin_instance.delete()
         return Response({'detail': 'Admin deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+
+
+
+class TechnicianSearchByRoleView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get 'role' from query parameters
+        role = request.GET.get('role', None)
+        
+        # Check if 'role' is provided
+        if not role:
+            return Response({"detail": "Role is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Search for technicians by role
+            technicians = Technician.objects.filter(role__icontains=role)  # Use icontains for case-insensitive search
+            
+            if not technicians:
+                return Response({"detail": "No technicians found with the specified role."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize the technicians data
+            technician_serializer = TechnicianSerializer(technicians, many=True)
+            
+            # Return the technician data in the response
+            return Response(technician_serializer.data)
+        
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
