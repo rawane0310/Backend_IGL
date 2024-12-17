@@ -88,7 +88,7 @@ class ModifierDossierAPIView(APIView):
 
 
 
-
+""""
 class DossierPatientSearchView(APIView):
     def get(self, request, *args, **kwargs):
         # Get QR code content from the query parameters
@@ -129,6 +129,38 @@ class DossierPatientSearchView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+"""
+
+class DossierPatientSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get patient ID and name from the query parameters
+        patient_id = request.GET.get('id', None)
+        patient_name = request.GET.get('nom', None)
+
+        if not patient_id or not patient_name:
+            return Response({"detail": "Patient ID and name are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Find the patient based on the provided patient_id and patient_name
+            patient = get_object_or_404(Patient, id=patient_id, nom=patient_name)
+            
+            # Get the DossierPatient associated with the patient
+            dossier_patient = get_object_or_404(DossierPatient, patient=patient)
+
+            # Serialize the patient and dossier details
+            dossier_serializer = DossierPatientSerializer(dossier_patient)
+            patient_serializer = PatientSerializer(patient)
+
+            # Combine both serialized data
+            response_data = {
+                "dossier": dossier_serializer.data,
+                "patient": patient_serializer.data,
+            }
+
+            return Response(response_data)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PatientSearchByNSSView(APIView):

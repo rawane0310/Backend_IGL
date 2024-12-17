@@ -221,10 +221,37 @@ class TechnicianSearchByRoleView(APIView):
                 return Response({"detail": "No technicians found with the specified role."}, status=status.HTTP_404_NOT_FOUND)
             
             # Serialize the technicians data
-            technician_serializer = TechnicianSerializer(technicians, many=True)
+            technician_serializer = TechnicianSerializer(technicians, many=True) # many puisque it return more then one object 
             
             # Return the technician data in the response
             return Response(technician_serializer.data)
         
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+
+class TechnicianSearchByIDView (APIView) : 
+    def get(self , request , *args , **kwargs) : 
+        id = request.GET.get('id' , None) 
+
+        # le cas ida mkanch id 
+        if not id : 
+            return Response ({"details" : "ID is required"} , status=status.HTTP_400_BAD_REQUEST)
+        
+        try : 
+            # chercher technicien with this id : 
+            technician = Technician.objects.get(id = id )
+
+            if not technician : 
+                return Response ({"details" : "No technicien found with this id "} , status=status.HTTP_404_NOT_FOUND)
+            
+
+            technician_ser = TechnicianSerializer(technician)
+
+            #retrun the technicien object in the response 
+            return Response (technician_ser.data)
+        except Exception as e : 
+            return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST)
+        

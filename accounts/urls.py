@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import UserView , TechnicianView , PatientView , AdminView , TechnicianSearchByRoleView
-
+from .views import UserView , TechnicianView , PatientView , AdminView , TechnicianSearchByRoleView , TechnicianSearchByIDView
+ 
 urlpatterns = [
     path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
@@ -17,7 +17,9 @@ urlpatterns = [
 
 
     #technicien search 
-    path('technician-by-role/', TechnicianSearchByRoleView.as_view() ) 
+    path('technician-by-role/', TechnicianSearchByRoleView.as_view() ) ,
+    path('technician-by-id/', TechnicianSearchByIDView.as_view() ) 
+
 
  
 ]

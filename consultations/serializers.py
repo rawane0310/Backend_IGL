@@ -16,3 +16,5 @@ class ConsultationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
    
+
+
