@@ -1,7 +1,7 @@
 # urls.py
 from django.urls import path
 from .views import ConsultationCreateView , OrdonnanceCreateView , SupprimerOrdonnanceAPIView , SupprimerConsultationAPIView , ModifierOrdonnanceAPIV , ModifierConsultationAPIV
-
+from .views import RechercheOrdonnanceAPIV
 
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path('consultation/<int:consultation_id>/delete/', SupprimerConsultationAPIView.as_view(), name='delete-consultation'),
     path('ordonnance/<int:ordonnance_id>/modify/', ModifierOrdonnanceAPIV.as_view(), name='modify-ordonnance'),
     path('consultation/<int:consultation_id>/modify/', ModifierConsultationAPIV.as_view(), name='modify-consultation'),
+    path('ordonnance/search/',RechercheOrdonnanceAPIV.as_view(), name='search-ordonnance'),
 ]

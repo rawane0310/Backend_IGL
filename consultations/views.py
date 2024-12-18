@@ -156,3 +156,31 @@ class ModifierConsultationAPIV(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
         
+
+
+
+
+class RechercheOrdonnanceAPIV(APIView):
+    def get(self, request):
+        # Récupérer les paramètres de requête
+        id_ = request.GET.get('id')
+        date = request.GET.get('date')  # Format attendu : "yyyy-mm-dd"
+        validation = request.GET.get('validation')  # "true" ou "false"
+        
+        # Filtrer les ordonnances
+        ordonnances = Ordonnance.objects.all()
+        
+        if id_:
+            ordonnances = ordonnances.filter(id=id_)
+        if date:
+            ordonnances = ordonnances.filter(date=date)
+        if validation is not None:
+            validation_bool = validation.lower() == 'true'
+            ordonnances = ordonnances.filter(validation=validation_bool)
+        
+        # Préparer la réponse
+        resultats = list(ordonnances.values())
+        return Response(resultats)
+
+
+
