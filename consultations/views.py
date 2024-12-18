@@ -183,4 +183,25 @@ class RechercheOrdonnanceAPIV(APIView):
         return Response(resultats)
 
 
+import random
+
+
+class ValidationOrdonnance(APIView):
+    def post(self, request, pk):
+        try:
+            # Récupérer l'ordonnance par ID
+            ordonnance = Ordonnance.objects.get(pk=pk)
+            
+            # Validation aléatoire (vrai ou faux)
+            validation_random = random.choice([True, False])
+            ordonnance.validation = validation_random
+            ordonnance.save()
+
+            # Réponse selon l'état de validation
+            if validation_random:
+                return Response({"message": "Ordonnance validée avec succès.", "validation": True}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Ordonnance rejetée.", "validation": False}, status=status.HTTP_200_OK)
+        except Ordonnance.DoesNotExist:
+            return Response({"error": "Ordonnance non trouvée."}, status=status.HTTP_404_NOT_FOUND)
 
