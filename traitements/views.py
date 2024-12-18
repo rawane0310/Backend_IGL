@@ -172,3 +172,71 @@ class ModifierMedicamentAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
+    
+
+
+class RechercheMedicamentAPIView(APIView):
+    def get(self, request):
+        # Récupérer les paramètres de recherche depuis la requête GET
+        id_ = request.GET.get('id')
+        nom = request.GET.get('nom')
+        dose = request.GET.get('dose')
+        frequence = request.GET.get('frequence')
+        duree = request.GET.get('duree')
+        ordonnance_id = request.GET.get('ordonnance')  # ID de l'ordonnance
+        soin_id = request.GET.get('soin')  # ID du soin infirmier
+        
+        # Initialiser une requête pour récupérer tous les médicaments
+        medicaments = Medicament.objects.all()
+        
+        # Appliquer les filtres selon les paramètres fournis
+        if id_:
+            medicaments = medicaments.filter(id=id_)
+        if nom:
+            medicaments = medicaments.filter(nom__icontains=nom)  # Recherche partielle
+        if dose:
+            medicaments = medicaments.filter(dose__icontains=dose)
+        if frequence:
+            medicaments = medicaments.filter(frequence__icontains=frequence)
+        if duree:
+            medicaments = medicaments.filter(duree__icontains=duree)
+        if ordonnance_id:
+            medicaments = medicaments.filter(ordonnance_id=ordonnance_id)
+        if soin_id:
+            medicaments = medicaments.filter(soin_id=soin_id)
+        
+        # Préparer les résultats au format JSON
+        resultats = list(medicaments.values())
+        return Response(resultats)
+
+
+class RechercheSoinInfermierAPIView(APIView):
+    def get(self, request):
+        # Récupération des paramètres de recherche
+        id_ = request.GET.get('id')  # ID du soin
+        date = request.GET.get('date')  # Format attendu : yyyy-mm-dd
+        infirmier_id = request.GET.get('infirmier')  # ID de l'infirmier
+        observation = request.GET.get('observation')  # Texte dans observation
+        soin_realise = request.GET.get('soin_realise')  # Texte dans soin réalisé
+        dossier_id = request.GET.get('dossier')  # ID du dossier patient
+        
+        # Initialiser une requête pour récupérer tous les soins
+        soins = SoinInfermier.objects.all()
+        
+        # Appliquer les filtres si les paramètres sont fournis
+        if id_:
+            soins = soins.filter(id=id_)
+        if date:
+            soins = soins.filter(date=date)
+        if infirmier_id:
+            soins = soins.filter(infirmier_id=infirmier_id)
+        if observation:
+            soins = soins.filter(observation__icontains=observation)  # Recherche partielle
+        if soin_realise:
+            soins = soins.filter(soin_realise__icontains=soin_realise)  # Recherche partielle
+        if dossier_id:
+            soins = soins.filter(dossier_id=dossier_id)
+        
+        # Préparer la réponse au format JSON
+        resultats = list(soins.values())
+        return Response(resultats)
