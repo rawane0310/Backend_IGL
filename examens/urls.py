@@ -3,6 +3,9 @@ from .views import (
     ExamenRadiologiqueView,
     ExamenBiologiqueView,
     ResultatExamenView,
+    SearchExamenBiologiqueView,
+    SearchExamenRadiologiqueView,
+    SearchResultatBiologiqueByIdView
 )
 
 urlpatterns = [
@@ -12,4 +15,7 @@ urlpatterns = [
     path('examen_biologique/<int:pk>/', ExamenBiologiqueView.as_view(), name='examen-biologique-detail'),
     path('resultats_examens/', ResultatExamenView.as_view(), name='resultats-examens-list'),
     path('resultat_examen/<int:pk>/', ResultatExamenView.as_view(), name='resultat-examen-detail'),
+    path('search-examens-biologiques/', SearchExamenBiologiqueView.as_view(), name='search_examens_biologiques'),
+    path('search-examens-radiologiques/', SearchExamenRadiologiqueView.as_view(), name='search_examens_radiologiques'),
+    path('search-resultat-biologique/', SearchResultatBiologiqueByIdView.as_view(), name='search_resultat_biologique'),
 ]

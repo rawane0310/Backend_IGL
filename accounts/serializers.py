@@ -1,4 +1,4 @@
-
+"""
 from rest_framework import serializers
 from .models import Patient, User, DossierPatient, Technician , SoinInfermier, ExamenBiologique, ExamenRadiologique , Medicament , Ordonnance , OrdonnanceMedicament, Consultation
 
@@ -128,3 +128,4 @@ class SoinInfermierSerializer(serializers.ModelSerializer):
         soin_infirmier = SoinInfermier.objects.create(**validated_data)
         soin_infirmier.medicament_administré.set(medicaments_data)
         return soin_infirmier
+"""
