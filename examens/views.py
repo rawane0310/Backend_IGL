@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from accounts.models  import ExamenRadiologique , ExamenBiologique , ResultatExamen
 from .serializers import ExamenRadiologiqueSerializer , ExamenBiologiqueSerializer , ResultatExamenSerializer
+from datetime import datetime
 
 
 class ResultatExamenView(APIView):
@@ -113,7 +114,7 @@ class SearchExamenBiologiqueView(APIView):
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
         dossier = request.GET.get('dossier', None)
-        terminaison = request.GET.get('terminaison', None)
+        description = request.GET.get('description', None)
 
         try:
             examens_bio = ExamenBiologique.objects.all()
@@ -123,8 +124,8 @@ class SearchExamenBiologiqueView(APIView):
                 examens_bio = examens_bio.filter(date=date)
             if dossier:
                 examens_bio = examens_bio.filter(dossier__icontains=dossier)
-            if terminaison:
-                examens_bio = examens_bio.filter(terminaison__icontains=terminaison)
+            if description:
+                examens_bio = examens_bio.filter(description__icontains=description)
 
             examens_bio_serializer = ExamenBiologiqueSerializer(examens_bio, many=True)
             return Response(examens_bio_serializer.data)
@@ -136,7 +137,7 @@ class SearchExamenRadiologiqueView(APIView):
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
         dossier = request.GET.get('dossier', None)
-        terminaison = request.GET.get('terminaison', None)
+        description = request.GET.get('description', None)
 
         try:
             examens_radio = ExamenRadiologique.objects.all()
@@ -146,8 +147,8 @@ class SearchExamenRadiologiqueView(APIView):
                 examens_radio = examens_radio.filter(date=date)
             if dossier:
                 examens_radio = examens_radio.filter(dossier__icontains=dossier)
-            if terminaison:
-                examens_radio = examens_radio.filter(terminaison__icontains=terminaison)
+            if description:
+                examens_radio = examens_radio.filter(description__icontains=description)
 
             examens_radio_serializer = ExamenRadiologiqueSerializer(examens_radio, many=True)
             return Response(examens_radio_serializer.data)
@@ -172,3 +173,31 @@ class SearchResultatBiologiqueByIdView(APIView):
             return Response(resultat_serializer.data)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class GraphiquePatientView(APIView):
+
+    def get(self, request, patient_id):
+        examens = ExamenBiologique.objects.filter(dossier_patient_id=patient_id)
+
+        if not examens:
+            return Response({"detail": "Aucun examen trouvé pour ce patient"}, status=status.HTTP_404_NOT_FOUND)
+
+        data = {}
+
+        for examen in examens:
+            resultats = ResultatExamen.objects.filter(examen_biologique=examen)
+
+            for resultat in resultats:
+                if resultat.parametre not in data:
+                    data[resultat.parametre] = {
+                        "dates": [],
+                        "valeurs": [],
+                        "unites": []
+                    }
+                data[resultat.parametre]["dates"].append(examen.date)
+                data[resultat.parametre]["valeurs"].append(resultat.valeur)
+                data[resultat.parametre]["unites"].append(resultat.unite)
+
+        return Response(data, status=status.HTTP_200_OK)

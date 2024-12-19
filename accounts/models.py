@@ -179,6 +179,9 @@ class ResultatExamen(models.Model):
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
 
+    class Meta:
+        unique_together = ('parametre', 'examen_biologique')
+
 
 
 #class ExamenBiologiqueResultat(models.Model):

@@ -4,12 +4,13 @@ from accounts.models import ResultatExamen , ExamenBiologique , ExamenRadiologiq
 class ExamenRadiologiqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamenRadiologique
-        fields = ['id', 'date', 'technicien', 'image', 'compte_rendu', 'terminaison', 'dossier_patient']
+        fields = ['id', 'date', 'technicien', 'image', 'compte_rendu','description', 'dossier_patient']
 
 class ExamenBiologiqueSerializer(serializers.ModelSerializer):
+    resultats = ResultatExamenSerializer(many=True, read_only=True)
     class Meta:
         model = ExamenBiologique
-        fields = ['id', 'date', 'technicien', 'terminaison', 'dossier_patient']
+        fields = ['id', 'date', 'technicien', 'description ', 'dossier_patient','resultats']
 
 class ResultatExamenSerializer(serializers.ModelSerializer):
     class Meta:
