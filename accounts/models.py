@@ -158,15 +158,14 @@ class ExamenRadiologique(models.Model):
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_radiologiques',null=True)
     image = models.ImageField(upload_to='radiology_images/',blank=True, null=True)
     compte_rendu = models.TextField(blank=True, null=True)
-    terminaison = models.BooleanField(default=False)
+    description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_radiologiques')
 
 
 class ExamenBiologique(models.Model):
     date = models.DateField()
-    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)
-    
-    terminaison = models.TextField(default=False)
+    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)   
+    description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_biologiques')
 
 
