@@ -118,13 +118,19 @@ class Medicament(models.Model):
 
     
 
+class Resume(models.Model):
+    diagnostic = models.TextField(blank=True, null=True)
+    symptomes = models.TextField(blank=True, null=True)
+    mesures_prises = models.TextField( blank=True, null=True)
+    date_prochaine_consultation = models.DateField( blank=True, null=True)
+    
 
 
 class Consultation(models.Model):
     date = models.DateField()
     medecin = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='consultations')
     diagnostic = models.TextField(blank=True, null=True)
-    resume = models.TextField(blank=True, null=True)
+    resume = models.OneToOneField(Resume, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
     ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
    
     dossier = models.ForeignKey(DossierPatient , on_delete=models.CASCADE, related_name='consultations') 
