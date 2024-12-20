@@ -129,7 +129,9 @@ class Resume(models.Model):
 class Consultation(models.Model):
     date = models.DateField()
     medecin = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='consultations')
-    diagnosticStatut = models.BooleanField(default=False)
+
+    diagnosticStatut = models.BooleanField(default=False) 
+
     resume = models.OneToOneField(Resume, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
     ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
    
@@ -164,8 +166,9 @@ class ExamenRadiologique(models.Model):
 
 class ExamenBiologique(models.Model):
     date = models.DateField()
-    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)
-    
+
+    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)   
+
     description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_biologiques')
 
@@ -178,10 +181,12 @@ class ResultatExamen(models.Model):
     commentaire = models.TextField(blank=True, null=True)
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
-    
+
+
     class Meta:
         unique_together = ('parametre', 'examen_biologique')
-    
+
+
 
 #class ExamenBiologiqueResultat(models.Model):
  #   examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE)
