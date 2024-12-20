@@ -1,2 +1,0 @@
-pip install django-qr-code
-pip install "qrcode[pil]"
