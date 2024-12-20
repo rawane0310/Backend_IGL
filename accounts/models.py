@@ -129,7 +129,7 @@ class Resume(models.Model):
 class Consultation(models.Model):
     date = models.DateField()
     medecin = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='consultations')
-    diagnostic = models.TextField(blank=True, null=True)
+    diagnosticStatut = models.BooleanField(default=False) 
     resume = models.OneToOneField(Resume, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
     ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
    
