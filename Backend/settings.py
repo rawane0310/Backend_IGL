@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    
     'rest_framework',
     'accounts',
     'administration',
@@ -62,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    
     
 ]
 
@@ -165,3 +167,15 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
 }
+
+
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",  # Angular app origin
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
+CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS
+CSRF_COOKIE_SAMESITE = 'Strict'  # To prevent CSRF attacks

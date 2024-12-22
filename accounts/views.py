@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer
 from .models import User , Technician , Patient , Admin 
+from datetime import timedelta
 
 
 
@@ -38,8 +39,40 @@ class RegisterUserView(APIView):
 
 # Custom Login View
 class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+    serializer_class = CustomTokenObtainPairSerializer  # Your custom serializer
+    
+    def post(self, request, *args, **kwargs):
+        # Call the original post method to get the tokens (access and refresh)
+        response = super().post(request, *args, **kwargs)
 
+        # Extract the access and refresh tokens from the response data
+        access_token = response.data.get('access')
+        refresh_token = response.data.get('refresh')
+
+        user = self.get_user_from_request(request)
+        role = user.role if user else None
+
+        # Add role to the response data
+        response.data['role'] = role
+        
+        # Set the refresh token as a cookie
+        response.set_cookie(
+            'refreshToken', 
+            refresh_token, 
+            max_age=timedelta(days=7),  # Set cookie expiration
+            httponly=True,  # Prevent JavaScript access
+            secure=True,    # Only send the cookie over HTTPS
+            samesite='Strict'  # Strict mode to prevent CSRF issues
+        )
+
+        # Return the response with the access token in the body
+        return response
+    
+    def get_user_from_request(self , request ) : 
+        ser = self.get_serializer(data = request.data) 
+        ser.is_valid(raise_exception=True)
+        return ser.user
+ 
 
 """
 # Logout View Without Blacklisting
@@ -120,7 +153,7 @@ class UserView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
+"""
 class PatientView(APIView):
 
     def post(self, request, *args, **kwargs):
@@ -187,6 +220,69 @@ class PatientView(APIView):
             return Response({'detail': 'Patient deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
         except Patient.DoesNotExist:
             return Response({'detail': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+"""
+
+
+
+
+
+class PatientView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        # Create a new patient
+        patient_serializer = PatientSerializer(data=request.data)
+        if patient_serializer.is_valid():
+            patient_serializer.save()
+            return Response(patient_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(patient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, *args, **kwargs):
+        # Update an existing patient
+        try:
+            # Retrieve patient by patient_id from URL
+            patient = Patient.objects.get(id=kwargs['patient_id'])
+        except Patient.DoesNotExist:
+            return Response({'detail': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get the new data from the request
+        patient_data = request.data
+        
+        # Check for user_id and medecin_traitant_id in the request data
+        if 'user_id' in patient_data:
+            try:
+                # Look for user by user_id
+                user = User.objects.get(id=patient_data['user_id'])
+                patient.user = user
+            except User.DoesNotExist:
+                return Response({'detail': f'User with ID {patient_data["user_id"]} not found.'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        if 'medecin_traitant_id' in patient_data:
+            try:
+                # Look for technician by medecin_traitant_id
+                medecin_traitant = Technician.objects.get(id=patient_data['medecin_traitant_id'])
+                patient.medecin_traitant = medecin_traitant
+            except Technician.DoesNotExist:
+                return Response({'detail': f'Technician with ID {patient_data["medecin_traitant_id"]} not found.'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        # Update other patient fields (only if provided in the request)
+        patient.nom = patient_data.get('nom', patient.nom)
+        patient.prenom = patient_data.get('prenom', patient.prenom)
+        patient.date_naissance = patient_data.get('date_naissance', patient.date_naissance)
+        patient.adresse = patient_data.get('adresse', patient.adresse)
+        patient.tel = patient_data.get('tel', patient.tel)
+        patient.mutuelle = patient_data.get('mutuelle', patient.mutuelle)
+        patient.personne_a_contacter = patient_data.get('personne_a_contacter', patient.personne_a_contacter)
+        patient.nss = patient_data.get('nss', patient.nss)
+        
+        # Save the updated patient
+        patient.save()
+        return Response(PatientSerializer(patient).data, status=status.HTTP_200_OK)
+
 
 
 

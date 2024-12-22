@@ -155,7 +155,7 @@ class AdminSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
+"""
 class PatientSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(write_only=True)  # Add a field for user email
     medecin_traitant_email = serializers.EmailField(write_only=True)  # Add a field for the medecin_traitant email
@@ -196,6 +196,47 @@ class PatientSerializer(serializers.ModelSerializer):
         return patient
     
 
+"""
+
+
+
+
+
+class PatientSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)  # Accept user_id instead of user_email
+    medecin_traitant_id = serializers.IntegerField(write_only=True)  # Accept medecin_traitant_id instead of medecin_traitant_email
+
+    class Meta:
+        model = Patient
+        fields = [
+            'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
+            'medecin_traitant_id', 'personne_a_contacter', 'nss', 'user_id'
+        ]  # Include medecin_traitant_id and user_id in the fields
+
+    def create(self, validated_data):
+        # Extract the user and medecin_traitant ids from the validated data
+        user_id = validated_data.pop('user_id')
+        medecin_traitant_id = validated_data.pop('medecin_traitant_id')
+        
+        # Fetch the User object for the patient using the provided user_id
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"No user found with ID {user_id}")
+        
+        # Fetch the Technician object for the medecin_traitant using the provided medecin_traitant_id
+        try:
+            medecin_traitant = Technician.objects.get(id=medecin_traitant_id)
+        except Technician.DoesNotExist:
+            raise serializers.ValidationError(f"No technician found with ID {medecin_traitant_id}")
+
+        # Create the patient and include the user and medecin_traitant in the validated data
+        patient = Patient.objects.create(
+            user=user, 
+            medecin_traitant=medecin_traitant, 
+            **validated_data
+        )
+        return patient
 
 
 

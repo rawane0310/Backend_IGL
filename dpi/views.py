@@ -10,8 +10,13 @@ import qrcode
 from django.shortcuts import get_object_or_404
 import io
 import base64
+from rest_framework.permissions import IsAuthenticated
 
 class DossierPatientCreateView(APIView):
+
+    # Define permissions
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         try:
             patient_id = request.data.get('patient')
