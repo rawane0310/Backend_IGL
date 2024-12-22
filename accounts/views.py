@@ -38,7 +38,7 @@ class RegisterUserView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Custom Login View
-class CustomTokenObtainPairView(TokenObtainPairView):
+class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer  # Your custom serializer
     
     def post(self, request, *args, **kwargs):
@@ -54,7 +54,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         # Add role to the response data
         response.data['role'] = role
-        
+
         # Set the refresh token as a cookie
         response.set_cookie(
             'refreshToken', 

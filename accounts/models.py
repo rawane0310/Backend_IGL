@@ -34,10 +34,10 @@ class CustomUserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None  # Remove the default username field
-    email = models.EmailField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True,default="email@example.com")
     role = models.CharField(
-        max_length=10, 
-        choices=[('admin', 'Admin'), ('technicien', 'Technicien'), ('patient', 'Patient')], 
+        max_length=20, 
+        choices=[('admin', 'Admin'), ('technicien', 'Technicien'), ('patient', 'Patient'),('administratif','Administratif')], 
         default='admin'
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -75,19 +75,31 @@ class User(AbstractUser):
   #password = models.CharField(max_length=128)
    # role = models.CharField(max_length=50)  #patient , technicien , admin 
 
+
+#Admin model
 class Admin(models.Model):
     nom = models.CharField(max_length=30)
     prenom = models.CharField(max_length=30)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin')  # Corrected ForeignKey relationship
 
 
+#Administratif model
+class Administratif(models.Model):
+    nom = models.CharField(max_length=30)
+    prenom = models.CharField(max_length=30)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administratif')  # Corrected ForeignKey relationship
+
 
 # Technician model
 class Technician(models.Model):
+    ROLE_CHOICES = [
+        ('medecin', 'medecin'),
+        ('infermier', 'infermier'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='technician')
     nom = models.CharField(max_length=50)
     prenom = models.CharField(max_length=50)
-    role = models.CharField(max_length=50)
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES)  
     specialite = models.CharField(max_length=100, blank=True, null=True)
     outils = models.JSONField(blank=True, null=True)  # List des tools comme chaine de car
 
@@ -102,6 +114,7 @@ class Patient(models.Model):
     mutuelle = models.CharField(max_length=100, blank=True, null=True)
     medecin_traitant = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='patients')
     personne_a_contacter = models.CharField(max_length=100)
+    
     nss = models.CharField(max_length=20) 
 
 
@@ -139,13 +152,21 @@ class Medicament(models.Model):
 
     
 
+class Resume(models.Model):
+    diagnostic = models.TextField(blank=True, null=True)
+    symptomes = models.TextField(blank=True, null=True)
+    mesures_prises = models.TextField( blank=True, null=True)
+    date_prochaine_consultation = models.DateField( blank=True, null=True)
+    
 
 
 class Consultation(models.Model):
     date = models.DateField()
     medecin = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='consultations')
-    diagnostic = models.TextField(blank=True, null=True)
-    resume = models.TextField(blank=True, null=True)
+
+    diagnosticStatut = models.BooleanField(default=False) 
+
+    resume = models.OneToOneField(Resume, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
     ordonnance = models.ForeignKey(Ordonnance, on_delete=models.SET_NULL, null=True,blank=True, related_name='consultations')
    
     dossier = models.ForeignKey(DossierPatient , on_delete=models.CASCADE, related_name='consultations') 
@@ -173,15 +194,16 @@ class ExamenRadiologique(models.Model):
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_radiologiques',null=True)
     image = models.ImageField(upload_to='radiology_images/',blank=True, null=True)
     compte_rendu = models.TextField(blank=True, null=True)
-    terminaison = models.BooleanField(default=False)
+    description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_radiologiques')
 
 
 class ExamenBiologique(models.Model):
     date = models.DateField()
-    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)
-    
-    terminaison = models.TextField(default=False)
+
+    technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)   
+
+    description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_biologiques')
 
 
@@ -193,6 +215,10 @@ class ResultatExamen(models.Model):
     commentaire = models.TextField(blank=True, null=True)
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
+
+
+    class Meta:
+        unique_together = ('parametre', 'examen_biologique')
 
 
 
