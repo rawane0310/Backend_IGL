@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import UserView , TechnicianView , PatientView , AdminView , TechnicianSearchByRoleView , TechnicianSearchByIDView
- 
+from .views import RegisterUserView , CustomTokenObtainPairView , TokenRefreshView , LogoutAPIView
 urlpatterns = [
     path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
@@ -18,7 +18,12 @@ urlpatterns = [
 
     #technicien search 
     path('technician-by-role/', TechnicianSearchByRoleView.as_view() ) ,
-    path('technician-by-id/', TechnicianSearchByIDView.as_view() ) 
+    path('technician-by-id/', TechnicianSearchByIDView.as_view() ) ,
+    path('register/', RegisterUserView.as_view(), name='register'),
+    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', LogoutAPIView.as_view(), name='logout'),
+    
 
 
  

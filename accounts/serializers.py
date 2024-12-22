@@ -1,6 +1,66 @@
 from rest_framework import serializers
 from .models import User ,Technician , Patient ,Admin 
 
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from accounts.models import User
+
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.models import User
+from rest_framework_simplejwt.exceptions import TokenError
+
+
+# ****************************************** auth ********************************************************
+
+# Custom serializer to include user role in the JWT payload
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['role'] = user.role  # Add custom claims
+        return token
+
+# User Registration Serializer
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email', 'password', 'role']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
+
+# Serializer for logging out the user
+
+
+
+class LogoutUserSerializer(serializers.Serializer):
+    refresh = serializers.CharField()  # Expecting refresh token in the request body
+
+    default_error_messages = {
+        'bad_token': 'Token is expired or invalid.'
+    }
+
+    def validate(self, attrs):
+        refresh = attrs.get('refresh')
+        if not refresh:
+            raise ValidationError({"refresh": "This field is required."})
+        self.token = refresh
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            token = RefreshToken(self.token)
+            token.blacklist()  # Blacklist the token (requires blacklisting enabled in SimpleJWT)
+        except TokenError:
+            raise ValidationError(self.default_error_messages['bad_token'])
+
+
+
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

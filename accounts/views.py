@@ -5,6 +5,90 @@ from .serializers import UserSerializer ,TechnicianSerializer , PatientSerialize
 from .models import User , Technician , Patient , Admin 
 
 
+
+from django.http import JsonResponse
+from rest_framework.parsers import JSONParser
+#********************************************** Auth *********************************************************
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer ,LogoutUserSerializer
+
+#from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.exceptions import APIException
+
+
+# User Registration View
+class RegisterUserView(APIView):
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Custom Login View
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+"""
+# Logout View Without Blacklisting
+class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @method_decorator(csrf_exempt)  # Exempt this view from CSRF protection
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            return Response({"message": "User logged out successfully."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+"""
+
+
+
+
+
+
+class LogoutAPIView(APIView):
+    serializer_class = LogoutUserSerializer
+
+    def post(self, request, *args, **kwargs):
+        # Pass the incoming request data directly to the serializer
+        serializer = self.serializer_class(data=request.data)
+        
+        # Validate the serializer
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # If valid, save (perform logout logic)
+        serializer.save()
+
+        # Return a response indicating successful logout
+        return Response({"detail": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+
+
 class UserView(APIView):
     # Create a new user (POST)
     def post(self, request, *args, **kwargs):
@@ -255,3 +339,10 @@ class TechnicianSearchByIDView (APIView) :
         except Exception as e : 
             return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST)
         
+ 
+
+
+
+
+ ## accounts : 
+ 
