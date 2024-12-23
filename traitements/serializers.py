@@ -10,7 +10,7 @@ from accounts.models import Ordonnance, SoinInfermier , Medicament
 class SoinInfermierSerializer(serializers.ModelSerializer):
     class Meta:
         model = SoinInfermier
-        fields = ['id', 'date', 'infirmier', 'observation', 'soin_realise', 'dossier']
+        fields = ['id', 'date', 'infirmier', 'observation', 'soin_realise', 'dossier','heure']
         
 
 

@@ -253,6 +253,7 @@ class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
         id_ = request.GET.get('id')  # ID du soin
         date = request.GET.get('date')  # Format attendu : yyyy-mm-dd
         infirmier_id = request.GET.get('infirmier')  # ID de l'infirmier
+        heure=request.GET.get('heure') #l'heure du soins
         observation = request.GET.get('observation')  # Texte dans observation
         soin_realise = request.GET.get('soin_realise')  # Texte dans soin réalisé
         dossier_id = request.GET.get('dossier')  # ID du dossier patient
@@ -267,6 +268,8 @@ class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
             soins = soins.filter(date=date)
         if infirmier_id:
             soins = soins.filter(infirmier_id=infirmier_id)
+        if heure:
+            heure = soins.filter(heure=heure)    
         if observation:
             soins = soins.filter(observation__icontains=observation)  # Recherche partielle
         if soin_realise:
