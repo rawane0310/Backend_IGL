@@ -211,7 +211,9 @@ class ResultatExamen(models.Model):
     commentaire = models.TextField(blank=True, null=True)
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
-
+    
+    class Meta:
+        unique_together = ('parametre', 'examen_biologique')
 
     
 

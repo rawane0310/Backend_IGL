@@ -12,8 +12,8 @@ class ResultatExamenSerializer(serializers.ModelSerializer):
         fields = ['id', 'parametre', 'valeur', 'unite', 'commentaire', 'examen_biologique']
 
 class ExamenBiologiqueSerializer(serializers.ModelSerializer):
-   
+    resultats = ResultatExamenSerializer(many=True, read_only=True)   
     class Meta:
         model = ExamenBiologique
-        fields = ['id', 'date', 'technicien', 'description ', 'dossier_patient']
+        fields = ['id', 'date', 'technicien', 'description', 'dossier_patient','resultats']
 
