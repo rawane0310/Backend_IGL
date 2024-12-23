@@ -42,14 +42,44 @@ class ResultatExamenView(APIView):
         except ResultatExamen.DoesNotExist:
             return Response({'error': 'Résultat d\'examen non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
+
+
+
 class ExamenBiologiqueView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        examens = ExamenBiologique.objects.all()
-        serializer = ExamenBiologiqueSerializer(examens, many=True)
+    def check_user_role(self, user, allowed_roles=None):
+        """
+        Check if the authenticated user has a role of 'technicien' and if their technician role matches allowed roles.
+        """
+        if user.role != 'technicien':  # Only 'technicien' users are allowed
+            return False
+
+        # Check if the user has a related 'Technician' instance
+        try:
+            technician = user.technician  # Access the related 'Technician' model
+            if allowed_roles and technician.role in allowed_roles:
+                return True  # User's technician role matches allowed roles
+            return False  # User's technician role does not match allowed roles
+        except Technician.DoesNotExist:
+            return False  # No related Technician instance
+
+    def get(self, request, pk):
+        try:
+            examen = ExamenBiologique.objects.get(pk=pk)
+        except ExamenBiologique.DoesNotExist:
+            return Response({'error': 'Examen Biologique not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ExamenBiologiqueSerializer(examen)
         return Response(serializer.data)
+    
 
+    
     def post(self, request):
+        # Only allow users with the 'medecin' role to create
+        if not self.check_user_role(request.user, allowed_roles=['medecin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = ExamenBiologiqueSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -57,26 +87,33 @@ class ExamenBiologiqueView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
+        if not self.check_user_role(request.user, allowed_roles=['medecin', 'laborantin']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             examen = ExamenBiologique.objects.get(pk=pk)
         except ExamenBiologique.DoesNotExist:
-            return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Examen Biologique not found'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamenBiologiqueSerializer(examen, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
 
     def delete(self, request, pk):
+        # Allow users with roles 'medecin' or 'laborantin' to delete
+        if not self.check_user_role(request.user, allowed_roles=['medecin', 'laborantin']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             examen = ExamenBiologique.objects.get(pk=pk)
             examen.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ExamenBiologique.DoesNotExist:
             return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-
-
 
 
 
@@ -105,8 +142,8 @@ class ExamenRadiologiqueView(APIView):
 
 
     def get(self, request):
-        if not self.check_user_role(request.user):
-            return Response({'error': 'You do not have permission to view this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        #if not self.check_user_role(request.user):
+           # return Response({'error': 'You do not have permission to view this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         examens = ExamenRadiologique.objects.all()
         serializer = ExamenRadiologiqueSerializer(examens, many=True)

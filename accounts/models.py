@@ -95,6 +95,7 @@ class Technician(models.Model):
     ROLE_CHOICES = [
         ('medecin', 'medecin'),
         ('infermier', 'infermier'),
+        ('laborantin', 'laborantin'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='technician')
     nom = models.CharField(max_length=50)
