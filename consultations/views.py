@@ -68,7 +68,7 @@ class ConsultationCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": f"Le resume avec l'ID {resume_id} n'existe pas."},serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
 class ResumeCreateView(APIView):

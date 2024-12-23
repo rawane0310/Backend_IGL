@@ -13,7 +13,7 @@ class OrdonnanceSerializer(serializers.ModelSerializer):
 class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultation
-        fields = '__all__'
+        fields = ['id', 'date', 'medecin','diagnosticStatut','resume','ordonnance','dossier']
 
 class ResumerSerializer(serializers.ModelSerializer):
     class Meta:

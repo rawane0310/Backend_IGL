@@ -44,16 +44,19 @@ INSTALLED_APPS = [
     'traitements',
     'consultations',
     'qr_code',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'Backend.urls'
@@ -82,12 +85,12 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'myconnections',
-        'USER': 'ikram',
-        'PASSWORD': 'helloworld123',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dpi1',
+        'USER': 'root',
+        'PASSWORD': 'Livitachi1010#',
         'HOST': 'localhost',  
-        'PORT': '5432',  
+        'PORT': '3306',  
     }
 }
 
