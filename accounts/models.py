@@ -92,10 +92,16 @@ class Administratif(models.Model):
 
 # Technician model
 class Technician(models.Model):
+    ROLE_CHOICES = [
+        ('medecin', 'medecin'),
+        ('infermier', 'infermier'),
+        ('laborantin', 'laborantin'),
+        ('radiologue','radiologue'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='technician')
     nom = models.CharField(max_length=50)
     prenom = models.CharField(max_length=50)
-    role = models.CharField(max_length=50)
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES)
     specialite = models.CharField(max_length=100, blank=True, null=True)
     outils = models.JSONField(blank=True, null=True)  # List des tools comme chaine de car
 
