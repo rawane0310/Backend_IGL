@@ -14,6 +14,7 @@ from accounts.mixin import CheckUserRoleMixin
 
 class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['technicien'],['infermier']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -97,7 +98,7 @@ class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, medicament_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             medicament = Medicament.objects.get(id=medicament_id)
@@ -118,7 +119,7 @@ class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, soin_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             soin = SoinInfermier.objects.get(id=soin_id)
@@ -140,19 +141,19 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
 
     def put(self, request, soin_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_soin(request, soin_id, partial=False)
 
     def patch(self, request, soin_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_soin(request, soin_id, partial=True)
 
     def update_soin(self, request, soin_id, partial):
         if not self.check_user_role(request.user, ['technicien'],['infermier']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             soin = SoinInfermier.objects.get(id=soin_id)
@@ -174,19 +175,19 @@ class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
 
     def put(self, request, medicament_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_medicament(request, medicament_id, partial=False)
 
     def patch(self, request, medicament_id):
         if not self.check_user_role(request.user, ['technicien'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_medicament(request, medicament_id, partial=True)
 
     def update_medicament(self, request, medicament_id, partial):
         if not self.check_user_role(request.user, ['technicien'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             medicament = Medicament.objects.get(id=medicament_id)
@@ -208,7 +209,7 @@ class RechercheMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         if not self.check_user_role(request.user, ['technicien','patient'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Récupérer les paramètres de recherche depuis la requête GET
         id_ = request.GET.get('id')
@@ -247,7 +248,7 @@ class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         if not self.check_user_role(request.user, ['technicien','patient'],['infermier','medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Récupération des paramètres de recherche
         id_ = request.GET.get('id')  # ID du soin

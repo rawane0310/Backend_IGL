@@ -10,6 +10,7 @@ from accounts.mixin import CheckUserRoleMixin
 
 class CertificatView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         if not self.check_user_role(request.user, ['technicien','patient'],['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)

@@ -2,17 +2,17 @@ from rest_framework import serializers
 from .models import User ,Technician , Patient ,Admin ,Administratif
 
 from rest_framework import serializers
-#from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from accounts.models import User
 
 from rest_framework import serializers
-#from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError
-#from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import User
-#from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import TokenError
 
-"""""
+
 # ****************************************** auth ********************************************************
 
 # Custom serializer to include user role in the JWT payload
@@ -60,7 +60,7 @@ class LogoutUserSerializer(serializers.Serializer):
 
 
 
-"""""
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -171,7 +171,7 @@ class AdminSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
+"""""
 class PatientSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(write_only=True)  # Add a field for user email
     medecin_traitant_email = serializers.EmailField(write_only=True)  # Add a field for the medecin_traitant email
@@ -212,8 +212,39 @@ class PatientSerializer(serializers.ModelSerializer):
         return patient
     
 
-
-
+"""
+class PatientSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)  # Accept user_id instead of user_email
+    medecin_traitant_id = serializers.IntegerField(write_only=True)  # Accept medecin_traitant_id instead of medecin_traitant_email
+    class Meta:
+        model = Patient
+        fields = [
+            'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
+            'medecin_traitant_id', 'personne_a_contacter', 'nss', 'user_id'
+        ]  # Include medecin_traitant_id and user_id in the fields
+    def create(self, validated_data):
+        # Extract the user and medecin_traitant ids from the validated data
+        user_id = validated_data.pop('user_id')
+        medecin_traitant_id = validated_data.pop('medecin_traitant_id')
+        
+        # Fetch the User object for the patient using the provided user_id
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"No user found with ID {user_id}")
+        
+        # Fetch the Technician object for the medecin_traitant using the provided medecin_traitant_id
+        try:
+            medecin_traitant = Technician.objects.get(id=medecin_traitant_id)
+        except Technician.DoesNotExist:
+            raise serializers.ValidationError(f"No technician found with ID {medecin_traitant_id}")
+        # Create the patient and include the user and medecin_traitant in the validated data
+        patient = Patient.objects.create(
+            user=user, 
+            medecin_traitant=medecin_traitant, 
+            **validated_data
+        )
+        return patient
 
 
 
@@ -226,134 +257,3 @@ class TechnicianSerializerSearch(serializers.ModelSerializer):
         model = Technician
         fields = "__all__"
 
-"""
-from rest_framework import serializers
-from .models import Patient, User, DossierPatient, Technician , SoinInfermier, ExamenBiologique, ExamenRadiologique , Medicament , Ordonnance , OrdonnanceMedicament, Consultation
-
-class PatientSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = Patient
-        fields = [
-            'user', 'nom', 'prenom', 'date_naissance', 'adresse', 
-            'tel', 'mutuelle', 'medecin_traitant', 'personne_a_contacter', 
-            'qr', 'nss'
-        ]
-    
-    def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        user = User.objects.create(**user_data)
-        patient = Patient.objects.create(user=user, **validated_data)
-        return patient
-
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
-
-    class Meta:
-        model = User
-        fields = ['email', 'password', 'role']
-
-    def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = User(**validated_data)
-        user.set_password(password)  # Hashing the password
-        user.save()  # Save the user to the database
-        return user
-
-
-class MedicamentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Medicament
-        fields = ['nom', 'dose', 'frequence', 'duree']
-
-    def create(self, validated_data):
-        # Crée un objet Medicament et le sauvegarde dans la base de données
-        return Medicament.objects.create(**validated_data)
-
-class DossierPatientSerializer(serializers.ModelSerializer):
-    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
-    historiqueConsultation = serializers.PrimaryKeyRelatedField(
-        queryset=Consultation.objects.all(),
-        many=True,
-        required=False
-    )
-    soins_infirmiers = serializers.PrimaryKeyRelatedField(
-        queryset=SoinInfermier.objects.all(),
-        many=True,
-        required=False
-    )
-    examen_bio = serializers.PrimaryKeyRelatedField(
-        queryset=ExamenBiologique.objects.all(),
-        many=True,
-        required=False
-    )
-    examen_radio = serializers.PrimaryKeyRelatedField(
-        queryset=ExamenRadiologique.objects.all(),
-        many=True,
-        required=False
-    )
-
-    class Meta:
-        model = DossierPatient
-        fields = ['patient', 'soins_infirmiers', 'examen_bio', 'examen_radio']
-
-    def create(self, validated_data):
-        soins_infirmiers = validated_data.pop('soins_infirmiers', [])
-        examens_bio = validated_data.pop('examen_bio', [])
-        examens_radio = validated_data.pop('examen_radio', [])
-
-        # Création de l'instance du DossierPatient
-        dossier = DossierPatient.objects.create(**validated_data)
-
-        # Ajout des relations Many-to-Many
-        dossier.soins_infirmiers.set(soins_infirmiers)
-        dossier.examen_bio.set(examens_bio)
-        dossier.examen_radio.set(examens_radio)
-
-        return dossier
-    
-class OrdonnanceMedicamentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OrdonnanceMedicament
-        fields = ['ordonnance', 'medicament']
-
-class OrdonnanceSerializer(serializers.ModelSerializer):
-    medicaments = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True
-    )
-
-    class Meta:
-        model = Ordonnance
-        fields = ['date', 'medicaments', 'validation']
-
-    def create(self, validated_data):
-        # Extraire la liste des médicaments
-        medicaments_ids = validated_data.pop('medicaments', [])
-        ordonnance = Ordonnance.objects.create(**validated_data)
-
-        # Associer les médicaments via le modèle intermédiaire
-        for medicament_id in medicaments_ids:
-            medicament = Medicament.objects.get(id=medicament_id)
-            OrdonnanceMedicament.objects.create(
-                ordonnance=ordonnance,
-                medicament=medicament
-            )
-
-        return ordonnance
-
-class SoinInfermierSerializer(serializers.ModelSerializer):
-    infirmier = serializers.PrimaryKeyRelatedField(queryset=Technician.objects.all())
-    medicament_administré = serializers.PrimaryKeyRelatedField(queryset=Medicament.objects.all(), many=True)
-
-    class Meta:
-        model = SoinInfermier
-        fields = ['date', 'infirmier', 'medicament_administré', 'observation', 'soin_realise']
-
-    def create(self, validated_data):
-        medicaments_data = validated_data.pop('medicament_administré', [])
-        soin_infirmier = SoinInfermier.objects.create(**validated_data)
-        soin_infirmier.medicament_administré.set(medicaments_data)
-        return soin_infirmier
-"""
