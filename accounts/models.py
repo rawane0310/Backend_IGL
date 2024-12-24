@@ -139,7 +139,7 @@ class DossierPatient(models.Model):
 class SoinInfermier(models.Model):
     date = models.DateField()
     infirmier = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='soins_infirmiers',null=True)
-    
+    heure = models.TimeField(default="15:00")
     observation = models.TextField(blank=True, null=True)
     soin_realise = models.TextField()
     dossier = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='soins_infirmiers')

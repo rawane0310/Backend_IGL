@@ -2,17 +2,96 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer, AdminstratifSerializer
-from .models import User , Technician , Patient , Admin 
-
-
-
+from .models import User , Technician , Patient , Admin ,Administratif
+from datetime import timedelta
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer ,LogoutUserSerializer
+from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.exceptions import APIException
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
+from .mixin import CheckUserRoleMixin
 
 
-class UserView(APIView):
-    # Create a new user (POST)
+
+
+
+class RegisterUserView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# Custom Login View
+class LoginView(TokenObtainPairView,CheckUserRoleMixin):
+    
+    serializer_class = CustomTokenObtainPairSerializer  # Your custom serializer
+    
     def post(self, request, *args, **kwargs):
+        # Call the original post method to get the tokens (access and refresh)
+        response = super().post(request, *args, **kwargs)
+        # Extract the access and refresh tokens from the response data
+        access_token = response.data.get('access')
+        refresh_token = response.data.get('refresh')
+        user = self.get_user_from_request(request)
+        role = user.role if user else None
+
+        # Add role to the response data
+        response.data['role'] = role
+        
+        # Set the refresh token as a cookie
+        response.set_cookie(
+            'refreshToken', 
+            refresh_token, 
+            max_age=timedelta(days=7),  # Set cookie expiration
+            httponly=True,  # Prevent JavaScript access
+            secure=True,    # Only send the cookie over HTTPS
+            samesite='Strict'  # Strict mode to prevent CSRF issues
+        )
+        # Return the response with the access token in the body
+        return response
+    
+    def get_user_from_request(self , request ) : 
+        ser = self.get_serializer(data = request.data) 
+        ser.is_valid(raise_exception=True)
+        return ser.user
+
+
+class LogoutAPIView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = LogoutUserSerializer
+    def post(self, request, *args, **kwargs):
+        # Pass the incoming request data directly to the serializer
+        serializer = self.serializer_class(data=request.data)
+        
+        # Validate the serializer
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # If valid, save (perform logout logic)
+        serializer.save()
+        # Return a response indicating successful logout
+        return Response({"detail": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class UserView(APIView, CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+    # Create a new user (POST)
+    
+    def post(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -21,6 +100,7 @@ class UserView(APIView):
 
     # Update an existing user (PUT)
     def put(self, request, *args, **kwargs):
+       
         try:
             user = User.objects.get(id=kwargs.get('pk'))
         except User.DoesNotExist:
@@ -34,6 +114,9 @@ class UserView(APIView):
 
     # Delete a user (DELETE)
     def delete(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             user = User.objects.get(id=kwargs.get('pk'))
             user.delete()
@@ -42,9 +125,13 @@ class UserView(APIView):
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class PatientView(APIView):
+class PatientView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['administratif','technicien'],['medecin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         # Create a new patient
         patient = PatientSerializer(data=request.data)
         if patient.is_valid():
@@ -53,6 +140,9 @@ class PatientView(APIView):
         return Response(patient.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['administratif','technicien'],['medecin']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         # Update an existing patient
         try:
             # Retrieve patient by patient_id from URL
@@ -100,6 +190,9 @@ class PatientView(APIView):
         return Response(PatientSerializer(patient).data, status=status.HTTP_200_OK)
     
     def delete(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['administratif','technicien'],['medecin']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         # Delete an existing patient
         try:
             # Retrieve patient by patient_id from URL
@@ -114,9 +207,14 @@ class PatientView(APIView):
 
 
 
-class TechnicianView(APIView):
+class TechnicianView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+
     # Create a new technician (POST)
     def post(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = TechnicianSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -125,6 +223,9 @@ class TechnicianView(APIView):
 
     # Update an existing technician (PUT)
     def put(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['technicien'],['medecin','laborantin','infermier','radiologue']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             technician = Technician.objects.get(id=kwargs.get('pk'))
         except Technician.DoesNotExist:
@@ -138,6 +239,9 @@ class TechnicianView(APIView):
 
     # Delete a technician (DELETE)
     def delete(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             technician = Technician.objects.get(id=kwargs.get('pk'))
             technician.delete()
@@ -145,9 +249,13 @@ class TechnicianView(APIView):
         except Technician.DoesNotExist:
             return Response({"error": "Technician not found."}, status=status.HTTP_404_NOT_FOUND)
         
-class AdministratifView(APIView):
-
+class AdministratifView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         """
         Create a new admin using the user's email.
         """
@@ -156,10 +264,41 @@ class AdministratifView(APIView):
             serializer.save()  # Save the new admin
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+     # Update an existing administratif (PUT)
+    def put(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['administratif']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-class AdminView(APIView):
+        try:
+            administratif = Administratif.objects.get(id=kwargs.get('pk'))
+        except Administratif.DoesNotExist:
+            return Response({"error": "Administratif not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = AdminstratifSerializer(administratif, data=request.data, partial=True)  # `partial=True` for partial updates
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Delete an administratif (DELETE)
+    def delete(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['administratif']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            administratif = Administratif.objects.get(id=kwargs.get('pk'))
+            administratif.delete()
+            return Response({"message": "administratif deleted successfully."}, status=status.HTTP_200_OK)
+        except Administratif.DoesNotExist:
+            return Response({"error": "Administratif not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class AdminView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         """
         Create a new admin using the user's email.
         """
@@ -170,6 +309,9 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         """
         Get a specific admin or a list of admins.
         """
@@ -187,6 +329,9 @@ class AdminView(APIView):
         return Response(serializer.data)
 
     def put(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         """
         Update an existing admin using the user's email.
         """
@@ -203,6 +348,9 @@ class AdminView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         """
         Delete an existing admin.
         """
@@ -214,85 +362,8 @@ class AdminView(APIView):
         admin_instance.delete()
         return Response({'detail': 'Admin deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
-"""
-from rest_framework import generics
-from .models import Patient , DossierPatient, Medicament , Ordonnance , SoinInfermier
-from .serializers import PatientSerializer, UserSerializer, DossierPatientSerializer , MedicamentSerializer , OrdonnanceSerializer , SoinInfermierSerializer
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import DestroyAPIView
 
 
 
 
 
-
-class CreatePatientView(generics.CreateAPIView):
-    queryset = Patient.objects.all()
-    serializer_class = PatientSerializer
-    
-
-class CreateUserView(generics.CreateAPIView):
-    serializer_class = UserSerializer 
-
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        return Response(response.data, status=status.HTTP_201_CREATED)
-
-
-class CreateDossierPatientView(generics.CreateAPIView):
-    serializer_class = DossierPatientSerializer
-
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        return Response(response.data, status=status.HTTP_201_CREATED)
-    
-class CreateMedicamentView(generics.CreateAPIView):
-    serializer_class = MedicamentSerializer
-
-    def create(self, request, *args, **kwargs):
-        # Utilise la logique par défaut pour créer l'objet
-        response = super().create(request, *args, **kwargs)
-        # Retourne une réponse avec les données du médicament inséré
-        return Response(response.data, status=status.HTTP_201_CREATED)    
-
-class CreateOrdonnanceView(generics.CreateAPIView):
-    serializer_class = OrdonnanceSerializer
-
-    def create(self, request, *args, **kwargs):
-        # Appeler la logique par défaut de DRF
-        response = super().create(request, *args, **kwargs)
-        return Response(response.data, status=status.HTTP_201_CREATED)
-
-class CreateSoinInfermierView(generics.CreateAPIView):
-    serializer_class = SoinInfermierSerializer
-
-    def create(self, request, *args, **kwargs):
-        # Utiliser la logique DRF par défaut et personnaliser la réponse
-        response = super().create(request, *args, **kwargs)
-        return Response(response.data, status=status.HTTP_201_CREATED)
-    
-class DeleteSoinInfermierView(DestroyAPIView):
-    queryset = SoinInfermier.objects.all()  # Définir le queryset pour trouver l'objet à supprimer
-    serializer_class = SoinInfermierSerializer  # Le serializer utilisé pour la suppression
-
-    def delete(self, request, *args, **kwargs):
-        
-        try:
-            # Appel de la méthode générique de suppression
-            return super().delete(request, *args, **kwargs)
-        except SoinInfermier.DoesNotExist:
-            return Response({"detail": "SoinInfirmier non trouvé"}, status=status.HTTP_404_NOT_FOUND)    
-
-class DeleteMedicamentView(DestroyAPIView):
-    queryset = Medicament.objects.all()  # Définir le queryset pour trouver l'objet à supprimer
-    serializer_class = MedicamentSerializer  # Le serializer utilisé pour la suppression
-
-    def delete(self, request, *args, **kwargs):
-        
-        try:
-            # Appel de la méthode générique de suppression
-            return super().delete(request, *args, **kwargs)
-        except Medicament.DoesNotExist:
-            return Response({"detail": "Medicament non trouvé"}, status=status.HTTP_404_NOT_FOUND)          
-"""

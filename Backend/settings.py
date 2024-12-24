@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-u&r$b_#&lae%m5wdskrcsr7dmrv@#s+93sg97yv$+y77s=js2n'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -45,6 +45,12 @@ INSTALLED_APPS = [
     'consultations',
     'qr_code',
     'debug_toolbar',
+    'corsheaders',
+    'rest_framework',
+    'django_filters',
+    'rest_framework_simplejwt.token_blacklist',
+        
+    'versatileimagefield'
 ]
 
 MIDDLEWARE = [
@@ -57,9 +63,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Backend.urls'
+
+
 
 TEMPLATES = [
     {
@@ -136,3 +145,32 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT for authentication
+    ),
+}
+
+
+AUTH_USER_MODEL = 'accounts.User'
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,  }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",  # Angular app origin
+]
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
+CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS
+CSRF_COOKIE_SAMESITE = 'Strict'  # To prevent CSRF attacks
