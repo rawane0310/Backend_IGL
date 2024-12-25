@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'versatileimagefield',
     'reviews',
     'debug_toolbar',
+    'drf_yasg', 
 ]
 
 

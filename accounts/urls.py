@@ -28,7 +28,7 @@ urlpatterns = [
     path('technician-by-id/', TechnicianSearchByIDView.as_view() ) ,
 
     path('register/', RegisterUserView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='token_obtain_pair'),
+    path('login/', LoginView.as_view(), name='token_obtain_pair'), # first documenttion 
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
 
