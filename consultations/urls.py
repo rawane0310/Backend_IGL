@@ -3,6 +3,8 @@ from django.urls import path
 from .views import ConsultationCreateView , OrdonnanceCreateView , SupprimerOrdonnanceAPIView , SupprimerConsultationAPIView , ModifierOrdonnanceAPIV , ModifierConsultationAPIV
 from .views import ConsultationSearchByDateView , ConsultationSearchByDpiView , ConsultationSearchByTechnicienView
 
+from .views import RechercheOrdonnanceAPIV , ValidationOrdonnance , RechercheResume,ModifierResumeAPIV,SupprimerResumeAPIView,ResumeCreateView
+
 
 urlpatterns = [
     path('ordonnance/create/', OrdonnanceCreateView.as_view(), name='create-ordonnance'),
@@ -18,4 +20,10 @@ urlpatterns = [
 
 
 
+    path('ordonnance/search/',RechercheOrdonnanceAPIV.as_view(), name='search-ordonnance'),
+    path('ordonnance/validation/<int:pk>/', ValidationOrdonnance.as_view(), name='validation-ordonnance'),
+    path('resume/create/', ResumeCreateView.as_view(), name='create-resume'),
+    path('resume/<int:resume_id>/delete/', SupprimerResumeAPIView.as_view(), name='delete-resume'),
+    path('resume/<int:resume_id>/modify/', ModifierResumeAPIV.as_view(), name='modify-resume'),
+    path('resume/search/',RechercheResume.as_view(), name='search-resume'),
 ]

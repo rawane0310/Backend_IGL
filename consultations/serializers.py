@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import Consultation
+from accounts.models import Consultation , Resume
 from accounts.models import Technician, Ordonnance, DossierPatient  # Import des modèles associés
 
 
@@ -13,8 +13,10 @@ class OrdonnanceSerializer(serializers.ModelSerializer):
 class ConsultationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consultation
-        fields = '__all__'
-
-   
+        fields = ['id', 'date', 'medecin','diagnosticStatut','resume','ordonnance','dossier']
 
 
+class ResumerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resume
+        fields = '__all__'  

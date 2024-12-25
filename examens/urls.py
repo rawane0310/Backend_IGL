@@ -10,7 +10,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('examens_radiologiques/', ExamenRadiologiqueView.as_view(), name='examens-radiologiques-list'), #creer examen 
+    path('examens_radiologiques/', ExamenRadiologiqueView.as_view(), name='examens-radiologiques-list'),
     path('examen_radiologique/<int:pk>/', ExamenRadiologiqueView.as_view(), name='examen-radiologique-detail'),
     path('examens_biologiques/', ExamenBiologiqueView.as_view(), name='examens-biologiques-list'),
     path('examen_biologique/<int:pk>/', ExamenBiologiqueView.as_view(), name='examen-biologique-detail'),

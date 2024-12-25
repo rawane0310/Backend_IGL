@@ -96,6 +96,8 @@ class Technician(models.Model):
         ('medecin', 'medecin'),
         ('infermier', 'infermier'),
         ('laborantin', 'laborantin'),
+        ('radiologue','radiologue'),
+
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='technician')
     nom = models.CharField(max_length=50)
@@ -136,7 +138,7 @@ class DossierPatient(models.Model):
 class SoinInfermier(models.Model):
     date = models.DateField()
     infirmier = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='soins_infirmiers',null=True)
-    
+    heure = models.TimeField(default="15:00")
     observation = models.TextField(blank=True, null=True)
     soin_realise = models.TextField()
     dossier = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='soins_infirmiers')
@@ -145,8 +147,8 @@ class SoinInfermier(models.Model):
 class Medicament(models.Model):
     nom = models.CharField(max_length=100)
     dose = models.CharField(max_length=50)
-    frequence = models.CharField(max_length=50)
-    duree = models.CharField(max_length=50)
+    frequence = models.CharField(max_length=50,null=True, blank=True)
+    duree = models.CharField(max_length=50,null=True, blank=True)
     ordonnance = models.ForeignKey(Ordonnance, on_delete=models.CASCADE, related_name='medicaments',null=True, blank=True)
     soin = models.ForeignKey(SoinInfermier, on_delete=models.CASCADE, related_name='medicaments',null=True, blank=True)
 
@@ -216,6 +218,11 @@ class ResultatExamen(models.Model):
     commentaire = models.TextField(blank=True, null=True)
 
     examen_biologique = models.ForeignKey(ExamenBiologique, on_delete=models.CASCADE, related_name='resultats')
+    
+    class Meta:
+        unique_together = ('parametre', 'examen_biologique')
+
+    
 
 
     class Meta:

@@ -2,20 +2,28 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.models  import ExamenRadiologique , ExamenBiologique , ResultatExamen ,Technician
+from accounts.models  import ExamenRadiologique , ExamenBiologique , ResultatExamen, Technician
 from .serializers import ExamenRadiologiqueSerializer , ExamenBiologiqueSerializer , ResultatExamenSerializer
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from accounts.mixin import CheckUserRoleMixin
 
-class ResultatExamenView(APIView):
+class ResultatExamenView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+            return Response({'error': 'You do not have permission to get this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         resultats = ResultatExamen.objects.all()
         serializer = ResultatExamenSerializer(resultats, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        if not self.check_user_role(request.user, ['technicien'],['laborantin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         serializer = ResultatExamenSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -23,6 +31,9 @@ class ResultatExamenView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
+        if not self.check_user_role(request.user, ['technicien'],['laborantin','medecin']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             resultat = ResultatExamen.objects.get(pk=pk)
         except ResultatExamen.DoesNotExist:
@@ -35,15 +46,15 @@ class ResultatExamenView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        if not self.check_user_role(request.user, ['technicien'],['laborantin']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             resultat = ResultatExamen.objects.get(pk=pk)
             resultat.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ResultatExamen.DoesNotExist:
             return Response({'error': 'Résultat d\'examen non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-
-
-
 
 class ExamenBiologiqueView(APIView):
     permission_classes = [IsAuthenticated]
@@ -63,20 +74,15 @@ class ExamenBiologiqueView(APIView):
             return False  # User's technician role does not match allowed roles
         except Technician.DoesNotExist:
             return False  # No related Technician instance
+        
 
-    def get(self, request, pk):
-        try:
-            examen = ExamenBiologique.objects.get(pk=pk)
-        except ExamenBiologique.DoesNotExist:
-            return Response({'error': 'Examen Biologique not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ExamenBiologiqueSerializer(examen)
+    def get(self, request):
+        
+        examens = ExamenBiologique.objects.all()
+        serializer = ExamenBiologiqueSerializer(examens, many=True)
         return Response(serializer.data)
-    
 
-    
     def post(self, request):
-        # Only allow users with the 'medecin' role to create
         if not self.check_user_role(request.user, allowed_roles=['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -93,18 +99,15 @@ class ExamenBiologiqueView(APIView):
         try:
             examen = ExamenBiologique.objects.get(pk=pk)
         except ExamenBiologique.DoesNotExist:
-            return Response({'error': 'Examen Biologique not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamenBiologiqueSerializer(examen, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
 
     def delete(self, request, pk):
-        # Allow users with roles 'medecin' or 'laborantin' to delete
         if not self.check_user_role(request.user, allowed_roles=['medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -115,16 +118,14 @@ class ExamenBiologiqueView(APIView):
         except ExamenBiologique.DoesNotExist:
             return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
-
-"""
-
-hadi hna avant ma nsgem les droit te3 ano radiologue ye9der ymodifier l'examen //// lazem nsuprimiha apres 
-
 class ExamenRadiologiqueView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensures the user must be authenticated
+    permission_classes = [IsAuthenticated]
 
-    def check_user_role(self, user):
-       
+
+    def check_user_role(self, user,allowed_roles=None):
+        """
+        Check if the authenticated user has a role of 'technicien' and, if so, if their related 'Technician' role is 'medecin'.
+        """
         # First, check if the user has a role of 'technicien'
         if user.role != 'technicien':
             return False  # User is not a 'technicien', return False
@@ -132,25 +133,22 @@ class ExamenRadiologiqueView(APIView):
         # Now check if the user has a related 'Technician' and if the role is 'medecin'
         try:
             technician = user.technician  # Access the related 'Technician' model
-            if technician.role == 'medecin':
-                return True  # User is a 'medecin'
-            else:
-                return False  # User's technician role is not 'medecin', return False
+            if allowed_roles and technician.role in allowed_roles:
+                return True  # User's technician role matches allowed roles
+            return False  # User's technician role does not match allowed roles
         except Technician.DoesNotExist:
-            return False  # No related Technician found, return False
-
+            return False  # No related Technician instance
 
 
     def get(self, request):
-        #if not self.check_user_role(request.user):
-           # return Response({'error': 'You do not have permission to view this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         examens = ExamenRadiologique.objects.all()
         serializer = ExamenRadiologiqueSerializer(examens, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        if not self.check_user_role(request.user):
+        
+        if not self.check_user_role(request.user, allowed_roles=['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ExamenRadiologiqueSerializer(data=request.data)
@@ -160,8 +158,8 @@ class ExamenRadiologiqueView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
-        if not self.check_user_role(request.user):
-            return Response({'error': 'You do not have permission to update this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_user_role(request.user, allowed_roles=['medecin', 'radiologue']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             examen = ExamenRadiologique.objects.get(pk=pk)
@@ -175,7 +173,7 @@ class ExamenRadiologiqueView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if not self.check_user_role(request.user):
+        if not self.check_user_role(request.user, allowed_roles=['medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -186,88 +184,13 @@ class ExamenRadiologiqueView(APIView):
             return Response({'error': 'Examen Radiologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
 
+class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
 
-"""
-
-
-
-
-class ExamenRadiologiqueView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensures the user must be authenticated
-
-    def check_user_role(self, user):
-        """
-        Check if the authenticated user has a role of 'technicien' and, if so, if their related 'Technician' role is 'medecin'.
-        If the user is a 'radiologue', allow modification but not creation or deletion.
-        """
-        # Check if the user has a role of 'technicien'
-        if user.role == 'technicien':
-            try:
-                technician = user.technician  # Access the related 'Technician' model
-                if technician.role == 'medecin':
-                    return 'medecin'  # User is a 'medecin'
-                else:
-                    return False  # User's technician role is not 'medecin'
-            except Technician.DoesNotExist:
-                return False  # No related Technician found
-        elif user.role == 'radiologue':
-            return 'radiologue'  # User is a 'radiologue'
-        return False  # Default case if user role is not 'technicien' or 'radiologue'
-
-    def get(self, request):
-        examens = ExamenRadiologique.objects.all()
-        serializer = ExamenRadiologiqueSerializer(examens, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        role_check = self.check_user_role(request.user)
-        if role_check != 'medecin':
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        serializer = ExamenRadiologiqueSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk):
-        role_check = self.check_user_role(request.user)
-        if role_check == False:
-            return Response({'error': 'You do not have permission to update this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            examen = ExamenRadiologique.objects.get(pk=pk)
-        except ExamenRadiologique.DoesNotExist:
-            return Response({'error': 'Examen Radiologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-
-        if role_check == 'medecin' or role_check == 'radiologue':  # Allow update for 'medecin' and 'radiologue'
-            serializer = ExamenRadiologiqueSerializer(examen, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-    def delete(self, request, pk):
-        role_check = self.check_user_role(request.user)
-        if role_check != 'medecin':  # Only 'medecin' can delete
-            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            examen = ExamenRadiologique.objects.get(pk=pk)
-            examen.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except ExamenRadiologique.DoesNotExist:
-            return Response({'error': 'Examen Radiologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-
-
-
-
-
-
-
-class SearchExamenBiologiqueView(APIView):
     def get(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
         dossier = request.GET.get('dossier', None)
@@ -289,13 +212,13 @@ class SearchExamenBiologiqueView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
 
-
-
-
-
-class SearchExamenRadiologiqueView(APIView):
     def get(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['technicien','patient'],['radiologue','medecin']):
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
         dossier = request.GET.get('dossier', None)
@@ -318,11 +241,13 @@ class SearchExamenRadiologiqueView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
 
-
-
-class SearchResultatBiologiqueByIdView(APIView):
     def get(self, request, *args, **kwargs):
+        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         id_examen_bio = request.GET.get('idExamenBio', None)
 
         if not id_examen_bio:
@@ -341,12 +266,12 @@ class SearchResultatBiologiqueByIdView(APIView):
 
 
 
-
-
-
 class GraphiquePatientView(APIView):
-
+    permission_classes = [IsAuthenticated]
     def get(self, request, patient_id):
+        if not self.check_user_role(request.user, ['technicien'],['laborantin','medecin']):
+            return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
         examens = ExamenBiologique.objects.filter(dossier_patient_id=patient_id)
 
         if not examens:
@@ -369,6 +294,3 @@ class GraphiquePatientView(APIView):
                 data[resultat.parametre]["unites"].append(resultat.unite)
 
         return Response(data, status=status.HTTP_200_OK)
-    
-
-

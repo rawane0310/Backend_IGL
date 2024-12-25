@@ -29,7 +29,6 @@ ALLOWED_HOSTS = ['*']
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,10 +47,11 @@ INSTALLED_APPS = [
     'qrcode',
     'django_filters',
     'rest_framework_simplejwt.token_blacklist',
-
     'versatileimagefield',
     'reviews',
+    'debug_toolbar',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -62,11 +62,13 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    
-    
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
+
 ROOT_URLCONF = 'Backend.urls'
+
+
 
 TEMPLATES = [
     {
@@ -93,7 +95,7 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'projet_hopital',  
+        'NAME': 'kraaaht',  
         'USER': 'Rofieda',
         'PASSWORD': '@MaaMar@14@LD@AND@IMS@HM@',  
         'HOST': 'localhost',  
@@ -144,7 +146,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
@@ -169,11 +170,14 @@ SIMPLE_JWT = {
 
 
 
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular app origin
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
+CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS
+CSRF_COOKIE_SAMESITE = 'Strict'  # To prevent CSRF attacks
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
 CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS
