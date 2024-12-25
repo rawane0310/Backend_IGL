@@ -95,6 +95,11 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
         user = self.get_user_from_request(request)
         role = user.role if user else None
 
+        response.data['nom'] = user.first_name
+        response.data['prenom'] = user.last_name
+        response.data['userID'] = user.id
+
+
         # Add role to the response data
         response.data['role'] = role
         if role == 'technicien':
