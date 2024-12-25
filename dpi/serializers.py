@@ -14,7 +14,7 @@ class DossierPatientSerializer(serializers.ModelSerializer):
 class TechnicianSerializer(serializers.ModelSerializer):
     class Meta:
         model = Technician
-        fields = ['nom', 'prenom'] 
+        fields = ['id','nom', 'prenom'] 
 
 
 
@@ -29,6 +29,6 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         # Exclude the 'user' field and include the necessary fields
-        fields = ['nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
+        fields = ['id','nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
                   'medecin_traitant', 'personne_a_contacter', 'nss']
         # 'user' field is not included, so it will not appear in the serialized response

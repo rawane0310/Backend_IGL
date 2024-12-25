@@ -13,7 +13,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+        if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to get this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         resultats = ResultatExamen.objects.all()
@@ -21,7 +21,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.data)
 
     def post(self, request):
-        if not self.check_user_role(request.user, ['technicien'],['laborantin']):
+        if not self.check_user_role(request.user,['laborantin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ResultatExamenSerializer(data=request.data)
@@ -31,7 +31,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
-        if not self.check_user_role(request.user, ['technicien'],['laborantin','medecin']):
+        if not self.check_user_role(request.user,['laborantin','medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -46,7 +46,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if not self.check_user_role(request.user, ['technicien'],['laborantin']):
+        if not self.check_user_role(request.user,['laborantin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -188,7 +188,7 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+        if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         technicien = request.GET.get('technicien', None)
@@ -216,7 +216,7 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien','patient'],['radiologue','medecin']):
+        if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         technicien = request.GET.get('technicien', None)
@@ -245,7 +245,7 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien','patient'],['laborantin','medecin']):
+        if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         id_examen_bio = request.GET.get('idExamenBio', None)
@@ -269,7 +269,7 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 class GraphiquePatientView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, patient_id):
-        if not self.check_user_role(request.user, ['technicien'],['laborantin','medecin']):
+        if not self.check_user_role(request.user,['laborantin','medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         examens = ExamenBiologique.objects.filter(dossier_patient_id=patient_id)

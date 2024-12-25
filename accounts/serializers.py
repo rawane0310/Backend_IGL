@@ -28,7 +28,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['id','email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate(self, attrs):
@@ -88,7 +88,7 @@ class LogoutUserSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['id','email', 'password', 'role']
         extra_kwargs = {
             'password': {'write_only': True},  #  password is write-only
         }
@@ -108,7 +108,7 @@ class TechnicianSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Technician
-        fields = ['nom', 'prenom', 'role', 'specialite', 'outils', 'user_email']
+        fields = ['id','nom', 'prenom', 'role', 'specialite', 'outils', 'user_email']
 
     def create(self, validated_data):
         # Extract the user_email and create the relation with the user
@@ -238,4 +238,5 @@ class PatientSerializer(serializers.ModelSerializer):
         )
         return patient
     
+
 

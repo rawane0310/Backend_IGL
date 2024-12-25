@@ -43,22 +43,16 @@ class RegisterUserView(APIView, CheckUserRoleMixin):
         request_body=UserRegistrationSerializer,
     )
     def post(self, request):
-        """
-        Register a new user if the requesting user has the 'admin' role.
-        """
-        # Check if the user has the 'admin' role
-        if not self.check_user_role(request.user, ['admin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        # Initialize the serializer with the request data
         serializer = UserRegistrationSerializer(data=request.data)
 
         # Validate the serializer
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
 
-        # Return validation errors if the serializer is invalid
+            user = serializer.save()
+            user_data = UserRegistrationSerializer(user).data
+            return Response(user_data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -246,7 +240,9 @@ class PatientView(APIView, CheckUserRoleMixin):
         request_body=PatientSerializer,
     )
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif','technicien'], ['medecin']):
+
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Create a new patient
@@ -268,7 +264,9 @@ class PatientView(APIView, CheckUserRoleMixin):
         request_body=PatientSerializer,
     )
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif','technicien'], ['medecin']):
+
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Update an existing patient
@@ -298,7 +296,9 @@ class PatientView(APIView, CheckUserRoleMixin):
         }
     )
     def delete(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif','technicien'], ['medecin']):
+
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Delete an existing patient
@@ -333,7 +333,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
 
     # Update an existing technician (PUT)
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien'],['medecin','laborantin','infermier','radiologue']):
+        if not self.check_user_role(request.user, ['technicien']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
