@@ -61,38 +61,22 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
     """
     Custom login view that returns JWT access and refresh tokens along with the user's role.
     The refresh token is stored in an HttpOnly cookie for secure client-side access.
-
-    **POST request**:
-    - Receives the user's login credentials (username, password).
-    - Returns JWT access and refresh tokens.
-    - Sets the refresh token as an HttpOnly cookie in the user's browser for secure authentication.
-
-    **Request Body**:
-    - `username`: The username of the user.
-    - `password`: The password of the user.
-
-    **Response**:
-    - `access`: JWT access token to authenticate future requests.
-    - `refresh`: JWT refresh token stored in a secure cookie.
-    - `role`: The role of the user (e.g., admin, user, etc.) if authenticated successfully.
-
-    **Cookie**:
-    - `refreshToken`: A HttpOnly cookie containing the refresh token (valid for 7 days).
     """
-    
+
     serializer_class = CustomTokenObtainPairSerializer  # Custom serializer for login
 
     @swagger_auto_schema(
-        operation_description="Login and obtain JWT tokens along with user role",
+        operation_description="Login and obtain JWT tokens along with user role and DossierPatient ID (if user is a patient).",
         responses={
             200: openapi.Response(
                 description="Login successful, JWT access and refresh tokens are returned.",
                 examples={
                     "application/json": {
                         "access": "access_token_example",
-                        "role": "user",
+                        "role": "patient",
+                        "dossier_id": 1,
                     }
-                }
+                },
             ),
             401: "Unauthorized, invalid credentials",
         },
@@ -100,7 +84,7 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
     def post(self, request, *args, **kwargs):
         """
         Handle POST request for user login.
-        
+
         This method authenticates the user, generates access and refresh tokens,
         and sets the refresh token as an HttpOnly cookie.
         """
@@ -114,21 +98,33 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
         # Add role to the response data
         response.data['role'] = role
         if role == 'technicien':
+            # Retrieve and include the technician role
             try:
                 technician = Technician.objects.get(user=user)
                 response.data['technician_role'] = technician.role
             except Technician.DoesNotExist:
-                response.data['technician_role'] = None
+                response.data['technician_role'] = None 
 
+
+
+        if role == 'patient':
+            try:
+                patient = Patient.objects.get(user=user)
+                dossier = DossierPatient.objects.get(patient=patient)
+                response.data['dossier_id'] = dossier.id  
+            except Patient.DoesNotExist:
+                response.data['dossier_id'] = None  #
+            except DossierPatient.DoesNotExist:
+                response.data['dossier_id'] = None 
 
         # Set the refresh token as a cookie
         response.set_cookie(
-            'refreshToken', 
-            refresh_token, 
+            'refreshToken',
+            refresh_token,
             max_age=timedelta(days=7),  # Set cookie expiration
             httponly=True,  # Prevent JavaScript access
-            secure=True,    # Only send the cookie over HTTPS
-            samesite='Strict'  # Strict mode to prevent CSRF issues
+            secure=True,  # Only send the cookie over HTTPS
+            samesite='Strict',  # Strict mode to prevent CSRF issues
         )
         # Return the response with the access token in the body
         return response
@@ -136,14 +132,14 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
     def get_user_from_request(self, request):
         """
         Retrieve user from the request data and validate it.
-        
+
         This method uses the custom serializer to validate the user credentials.
         """
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         return ser.user
-    
 
+###########################################################################################################################################
 
 
 class LogoutAPIView(APIView, CheckUserRoleMixin):
