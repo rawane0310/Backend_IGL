@@ -11,5 +11,7 @@ urlpatterns = [
     path('search-by-qr/', DossierPatientSearchView.as_view(), name='dossier-patient-search'),
     path('search_by_nss/', PatientSearchByNSSView.as_view(), name='dossier-patient-search-by-nss'),
     path('create-dpi/', views.create_dpi, name='create_dpi'),
+    path('search-patient/<int:dossier_id>/', views.search_patient_by_dossier, name='search_patient_by_dossier'),
+
     
 ]
