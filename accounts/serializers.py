@@ -27,7 +27,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['id','email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -65,7 +65,7 @@ class LogoutUserSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password', 'role']
+        fields = ['id','email', 'password', 'role']
         extra_kwargs = {
             'password': {'write_only': True},  #  password is write-only
         }
@@ -85,7 +85,7 @@ class TechnicianSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Technician
-        fields = ['nom', 'prenom', 'role', 'specialite', 'outils', 'user_email']
+        fields = ['id','nom', 'prenom', 'role', 'specialite', 'outils', 'user_email']
 
     def create(self, validated_data):
         # Extract the user_email and create the relation with the user
@@ -219,7 +219,7 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
+            'id','nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
             'medecin_traitant_id', 'personne_a_contacter', 'nss', 'user_id'
         ]  # Include medecin_traitant_id and user_id in the fields
     def create(self, validated_data):

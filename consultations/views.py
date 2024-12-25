@@ -16,7 +16,7 @@ class OrdonnanceCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = OrdonnanceSerializer(data=request.data)
@@ -37,7 +37,7 @@ class ConsultationCreateView(APIView,CheckUserRoleMixin):
     """
 
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
@@ -85,7 +85,7 @@ class ConsultationCreateView(APIView,CheckUserRoleMixin):
 class ResumeCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ResumerSerializer(data=request.data)
@@ -102,7 +102,7 @@ class ResumeCreateView(APIView,CheckUserRoleMixin):
 class SupprimerConsultationAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, consultation_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
  
         try:
@@ -122,7 +122,7 @@ class SupprimerConsultationAPIView(APIView,CheckUserRoleMixin):
 class SupprimerOrdonnanceAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, ordonnance_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
  
         try:
@@ -143,7 +143,7 @@ class SupprimerOrdonnanceAPIView(APIView,CheckUserRoleMixin):
 class SupprimerResumeAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, resume_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -164,7 +164,7 @@ class ModifierOrdonnanceAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, ordonnance_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_ordonnance(request, ordonnance_id, partial=False)
@@ -198,19 +198,19 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, consultation_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
  
         return self.update_consultation(request, consultation_id, partial=False)
 
     def patch(self, request, consultation_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_consultation(request, consultation_id, partial=True)
 
     def update_consultation(self, request, consultation_id, partial):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -233,19 +233,19 @@ class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, resume_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_resume(request, resume_id, partial=False)
 
     def patch(self, request, resume_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_resume(request, resume_id, partial=True)
 
     def update_resume(self, request, resume_id, partial):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -267,7 +267,7 @@ class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
 class RechercheOrdonnanceAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        if not self.check_user_role(request.user, ['technicien','patient'],['medecin']):
+        if not self.check_user_role(request.user, ['patient'],['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Récupérer les paramètres de requête
@@ -294,7 +294,7 @@ class RechercheOrdonnanceAPIV(APIView,CheckUserRoleMixin):
 class RechercheResume(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        if not self.check_user_role(request.user, ['technicien','patient'],['medecin']):
+        if not self.check_user_role(request.user, ['patient'],['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Récupérer les paramètres de requête
@@ -326,7 +326,7 @@ class ValidationOrdonnance(APIView,CheckUserRoleMixin):
     
 
     def post(self, request, pk):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
