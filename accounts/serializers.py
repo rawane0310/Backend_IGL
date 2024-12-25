@@ -23,17 +23,35 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = user.role  # Add custom claims
         return token
 
-# User Registration Serializer
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate(self, attrs):
+        # Initialize an error dictionary
+        errors = {}
+
+        # Check if email is missing
+        if not attrs.get('email'):
+            errors['email'] = ['This field is required.']
+
+        # Check if password is missing
+        if not attrs.get('password'):
+            errors['password'] = ['This field is required.']
+
+        # Raise ValidationError if there are errors
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return attrs  # Return validated attributes
+
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-# Serializer for logging out the user
 
 
 

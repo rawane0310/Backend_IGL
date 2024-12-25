@@ -4,19 +4,14 @@ from rest_framework import status
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer
 from .models import User , Technician , Patient , Admin 
 from datetime import timedelta
-
-
-
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
-#********************************************** Auth *********************************************************
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer ,LogoutUserSerializer
-
 #from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -28,6 +23,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.exceptions import APIException
 
 
+
 # User Registration View
 class RegisterUserView(APIView):
     def post(self, request):
@@ -36,6 +32,8 @@ class RegisterUserView(APIView):
             serializer.save()
             return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 # Custom Login View
 class LoginView(TokenObtainPairView):

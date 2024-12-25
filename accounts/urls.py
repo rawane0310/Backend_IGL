@@ -5,7 +5,7 @@ urlpatterns = [
     path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
 
-    path('technicians/', TechnicianView.as_view()),  # For POST (creation)
+    path('technicians/', TechnicianView.as_view(), name='add_tech'),  # For POST (creation)
     path('technicians/<int:pk>/', TechnicianView.as_view()),  # For PUT and DELETE (modification & deletion)
 
 
