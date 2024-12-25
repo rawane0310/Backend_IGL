@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer
-from .models import User , Technician , Patient , Admin 
+from .models import User , Technician , Patient , Admin  , Administratif , DossierPatient
 from datetime import timedelta
 from django.http import JsonResponse
 from rest_framework.parsers import JSONParser
