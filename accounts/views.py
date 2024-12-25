@@ -480,6 +480,67 @@ class AdminView(APIView,CheckUserRoleMixin):
 
 
 class TechnicianSearchByRoleView(APIView):
+    """
+    API endpoint to search for technicians by role.
+    """
+
+    @swagger_auto_schema(
+        operation_description="Search technicians by role.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="role",
+                in_=openapi.IN_QUERY,
+                description="The role to search for (e.g., 'medecin', 'infermier').",
+                type=openapi.TYPE_STRING,
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of technicians matching the specified role.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "name": "Amira Mmr",
+                            "role": "medecon",
+                            "email": "amira.mmr@example.com"
+                        },
+                        {
+                            "id": 2,
+                            "name": "Amani Mmr",
+                            "role": "infermier",
+                            "email": "amani.mmrh@example.com"
+                        }
+                    ]
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid or missing 'role' parameter.",
+                examples={
+                    "application/json": {
+                        "detail": "Role is required."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="No technicians found for the specified role.",
+                examples={
+                    "application/json": {
+                        "detail": "No technicians found with the specified role."
+                    }
+                }
+            ),
+            500: openapi.Response(
+                description="An internal server error occurred.",
+                examples={
+                    "application/json": {
+                        "detail": "An error occurred."
+                    }
+                }
+            ),
+        }
+    )
     def get(self, request, *args, **kwargs):
         # Get 'role' from query parameters
         role = request.GET.get('role', None)
@@ -496,44 +557,99 @@ class TechnicianSearchByRoleView(APIView):
                 return Response({"detail": "No technicians found with the specified role."}, status=status.HTTP_404_NOT_FOUND)
             
             # Serialize the technicians data
-            technician_serializer = TechnicianSerializer(technicians, many=True) # many puisque it return more then one object 
+            technician_serializer = TechnicianSerializer(technicians, many=True) # many since multiple objects are returned
             
             # Return the technician data in the response
             return Response(technician_serializer.data)
         
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 
 
-class TechnicianSearchByIDView (APIView) : 
-    def get(self , request , *args , **kwargs) : 
-        id = request.GET.get('id' , None) 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
-        # le cas ida mkanch id 
-        if not id : 
-            return Response ({"details" : "ID is required"} , status=status.HTTP_400_BAD_REQUEST)
+class TechnicianSearchByIDView(APIView):
+    """
+    API endpoint to search for a technician by ID.
+    """
+
+    @swagger_auto_schema(
+        operation_description="Search for a technician by their unique ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="id",
+                in_=openapi.IN_QUERY,
+                description="The unique ID of the technician to search for.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Technician details for the specified ID.",
+                examples={
+                    "application/json":  {
+                            "id": 1,
+                            "name": "Amira Mmr",
+                            "role": "medecon",
+                            "email": "amira.mmr@example.com"
+                        },
+                }
+                
+            ),
+            400: openapi.Response(
+                description="Invalid or missing 'id' parameter.",
+                examples={
+                    "application/json": {
+                        "details": "ID is required"
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="No technician found for the specified ID.",
+                examples={
+                    "application/json": {
+                        "details": "No technician found with this id"
+                    }
+                }
+            ),
+            500: openapi.Response(
+                description="An internal server error occurred.",
+                examples={
+                    "application/json": {
+                        "details": "An error occurred."
+                    }
+                }
+            ),
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        # Get 'id' from query parameters
+        id = request.GET.get('id', None)
+
+        # Case when 'id' is not provided
+        if not id:
+            return Response({"details": "ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        try : 
-            # chercher technicien with this id : 
-            technician = Technician.objects.get(id = id )
+        try:
+            # Search for the technician with the provided ID
+            technician = Technician.objects.get(id=id)
 
-            if not technician : 
-                return Response ({"details" : "No technicien found with this id "} , status=status.HTTP_404_NOT_FOUND)
-            
-
+            # Serialize the technician object
             technician_ser = TechnicianSerializer(technician)
 
-            #retrun the technicien object in the response 
-            return Response (technician_ser.data)
-        except Exception as e : 
-            return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST)
-        
- 
-
-
-
+            # Return the technician object in the response
+            return Response(technician_ser.data)
+        except Technician.DoesNotExist:
+            return Response({"details": "No technician found with this id"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
  ## accounts : 
  
