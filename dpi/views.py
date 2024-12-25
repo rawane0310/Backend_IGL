@@ -213,3 +213,30 @@ def create_dpi(request):
 
     return render(request, "create_dpi.html", {'form': form})        
 
+
+
+
+
+
+
+## retrun patitn object by id 
+
+def search_patient_by_dossier(request, dossier_id):
+    # Try to retrieve the dossier and associated patient
+    dossier = get_object_or_404(DossierPatient, id=dossier_id)
+    patient = dossier.patient
+
+    # Return patient details in JSON format
+    response_data = {
+        'id': patient.id,
+        'nom': patient.nom,
+        'prenom': patient.prenom,
+        'date_naissance': patient.date_naissance.strftime('%Y-%m-%d'),
+        'adresse': patient.adresse,
+        'tel': patient.tel,
+        'mutuelle': patient.mutuelle,
+        'medecin_traitant': patient.medecin_traitant.id if patient.medecin_traitant else None,
+        'personne_a_contacter': patient.personne_a_contacter,
+        'nss': patient.nss,
+    }
+    return JsonResponse(response_data)
