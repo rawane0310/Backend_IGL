@@ -16,4 +16,3 @@ class ExamenBiologiqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamenBiologique
         fields = ['id', 'date', 'technicien', 'description', 'dossier_patient','resultats']
-

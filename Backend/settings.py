@@ -25,11 +25,10 @@ SECRET_KEY = 'django-insecure-u&r$b_#&lae%m5wdskrcsr7dmrv@#s+93sg97yv$+y77s=js2n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,34 +36,36 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework',
     'accounts',
     'administration',
     'dpi',
     'examens',
     'traitements',
     'consultations',
-    'qr_code',
-    'debug_toolbar',
-    'corsheaders',
-    'rest_framework',
+    'qrcode',
     'django_filters',
     'rest_framework_simplejwt.token_blacklist',
-        
-    'versatileimagefield'
+    'versatileimagefield',
+    'reviews',
+    'debug_toolbar',
+    'drf_yasg', 
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
+
 
 ROOT_URLCONF = 'Backend.urls'
 
@@ -94,10 +95,10 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dpi1',
-        'USER': 'root',
-        'PASSWORD': 'Livitachi1010#',
+        'ENGINE': 'django.db.backends.mysql',  
+        'NAME': 'kraaaht',  
+        'USER': 'Rofieda',
+        'PASSWORD': '@MaaMar@14@LD@AND@IMS@HM@',  
         'HOST': 'localhost',  
         'PORT': '3306',  
     }
@@ -165,11 +166,19 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,  }
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular app origin
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
+CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS
+CSRF_COOKIE_SAMESITE = 'Strict'  # To prevent CSRF attacks
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_HTTPONLY = True  # Set the CSRF cookie as HttpOnly
 CSRF_COOKIE_SECURE = True  # Ensure the CSRF cookie is sent over HTTPS

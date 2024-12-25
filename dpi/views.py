@@ -183,6 +183,7 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
             return Response({"detail": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
         
         except Exception as e:
+
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)    
         
 
@@ -227,3 +228,4 @@ def create_dpi(request):
         form = DossierPatientForm()
 
     return render(request, "create_dpi.html", {'form': form})        
+
