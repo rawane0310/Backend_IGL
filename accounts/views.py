@@ -113,7 +113,14 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
 
         # Add role to the response data
         response.data['role'] = role
-        
+        if role == 'technicien':
+            try:
+                technician = Technician.objects.get(user=user)
+                response.data['technician_role'] = technician.role
+            except Technician.DoesNotExist:
+                response.data['technician_role'] = None
+
+
         # Set the refresh token as a cookie
         response.set_cookie(
             'refreshToken', 
