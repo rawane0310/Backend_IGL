@@ -129,17 +129,9 @@ class DossierPatientSearchView(APIView,CheckUserRoleMixin):
             # Get the DossierPatient associated with the patient
             dossier_patient = get_object_or_404(DossierPatient, patient=patient)
 
-            # Serialize the patient and dossier details
-            dossier_serializer = DossierPatientSerializer(dossier_patient)
-            patient_serializer = PatientSerializer(patient)
-
-            # Combine both serialized data
-            response_data = {
-                "dossier": dossier_serializer.data,
-                "patient": patient_serializer.data,
-            }
-
-            return Response(response_data)
+            # Return the dossier patient id in the response
+            return Response({"id": dossier_patient.id}, status=status.HTTP_200_OK)
+            
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -166,18 +158,10 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
             # Get the DossierPatient associated with the patient
             dossier_patient = get_object_or_404(DossierPatient, patient=patient)
 
-            # Serialize the patient and dossier details
-            dossier_serializer = DossierPatientSerializer(dossier_patient)
-            patient_serializer = PatientSerializer(patient)
-
-            # Combine both serialized data
-            response_data = {
-                "dossier": dossier_serializer.data,
-                "patient": patient_serializer.data,
-            }
-
-            # Return the patient data in the response
-            return Response(response_data)
+            
+            
+            # Return the dossier patient id in the response
+            return Response({"id": dossier_patient.id}, status=status.HTTP_200_OK)
         
         except Patient.DoesNotExist:
             return Response({"detail": "Patient not found."}, status=status.HTTP_404_NOT_FOUND)
