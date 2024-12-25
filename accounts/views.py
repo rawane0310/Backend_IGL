@@ -1,45 +1,111 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer, AdminstratifSerializer
-from .models import User , Technician , Patient , Admin ,Administratif
+from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer
+from .models import User , Technician , Patient , Admin 
 from datetime import timedelta
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from django.http import JsonResponse
+from rest_framework.parsers import JSONParser
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.serializers import UserRegistrationSerializer, CustomTokenObtainPairSerializer ,LogoutUserSerializer
+#from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.exceptions import APIException
-from django.http import JsonResponse
-from rest_framework.parsers import JSONParser
 from .mixin import CheckUserRoleMixin
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
+class RegisterUserView(APIView, CheckUserRoleMixin):
+    """
+    API view to register a new user. Only accessible to users with the 'admin' role.
+    """
 
-
-
-class RegisterUserView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Registers a new user. Only accessible to users with the 'admin' role.",
+        responses={
+            201: openapi.Response('User registered successfully'),
+            400: 'Bad request - invalid data.',
+            403: 'Forbidden - You do not have permission to create this resource.',
+        },
+        request_body=UserRegistrationSerializer,
+    )
     def post(self, request):
-        
+
         serializer = UserRegistrationSerializer(data=request.data)
+
+        # Validate the serializer
         if serializer.is_valid():
+
             user = serializer.save()
             user_data = UserRegistrationSerializer(user).data
             return Response(user_data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 # Custom Login View
-class LoginView(TokenObtainPairView,CheckUserRoleMixin):
+class LoginView(TokenObtainPairView, CheckUserRoleMixin):
+    """
+    Custom login view that returns JWT access and refresh tokens along with the user's role.
+    The refresh token is stored in an HttpOnly cookie for secure client-side access.
+
+    **POST request**:
+    - Receives the user's login credentials (username, password).
+    - Returns JWT access and refresh tokens.
+    - Sets the refresh token as an HttpOnly cookie in the user's browser for secure authentication.
+
+    **Request Body**:
+    - `username`: The username of the user.
+    - `password`: The password of the user.
+
+    **Response**:
+    - `access`: JWT access token to authenticate future requests.
+    - `refresh`: JWT refresh token stored in a secure cookie.
+    - `role`: The role of the user (e.g., admin, user, etc.) if authenticated successfully.
+
+    **Cookie**:
+    - `refreshToken`: A HttpOnly cookie containing the refresh token (valid for 7 days).
+    """
     
-    serializer_class = CustomTokenObtainPairSerializer  # Your custom serializer
-    
+    serializer_class = CustomTokenObtainPairSerializer  # Custom serializer for login
+
+    @swagger_auto_schema(
+        operation_description="Login and obtain JWT tokens along with user role",
+        responses={
+            200: openapi.Response(
+                description="Login successful, JWT access and refresh tokens are returned.",
+                examples={
+                    "application/json": {
+                        "access": "access_token_example",
+                        "role": "user",
+                    }
+                }
+            ),
+            401: "Unauthorized, invalid credentials",
+        },
+    )
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST request for user login.
+        
+        This method authenticates the user, generates access and refresh tokens,
+        and sets the refresh token as an HttpOnly cookie.
+        """
         # Call the original post method to get the tokens (access and refresh)
         response = super().post(request, *args, **kwargs)
-        # Extract the access and refresh tokens from the response data
         access_token = response.data.get('access')
         refresh_token = response.data.get('refresh')
         user = self.get_user_from_request(request)
@@ -59,28 +125,62 @@ class LoginView(TokenObtainPairView,CheckUserRoleMixin):
         )
         # Return the response with the access token in the body
         return response
-    
-    def get_user_from_request(self , request ) : 
-        ser = self.get_serializer(data = request.data) 
+
+    def get_user_from_request(self, request):
+        """
+        Retrieve user from the request data and validate it.
+        
+        This method uses the custom serializer to validate the user credentials.
+        """
+        ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         return ser.user
+    
 
 
-class LogoutAPIView(APIView,CheckUserRoleMixin):
+
+class LogoutAPIView(APIView, CheckUserRoleMixin):
+    """
+    API view to handle user logout by blacklisting the refresh token.
+    Requires an authenticated user with a valid refresh token.
+    The access token should be included in the Authorization header.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutUserSerializer
+
+    @swagger_auto_schema(
+        operation_description="Logs out the user by blacklisting the refresh token. "
+                              "The access token should be included in the Authorization header as a Bearer token.",
+        responses={
+            204: "Successfully logged out.",
+            400: "Bad request - invalid or missing refresh token.",
+        },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='The refresh token to blacklist'),
+            },
+            required=['refresh'],
+        ),
+        security=[{'Bearer': []}],  # Indicating the use of Bearer token for authentication
+    )
     def post(self, request, *args, **kwargs):
+        """
+        Logs out the user by invalidating the provided refresh token.
+        """
         # Pass the incoming request data directly to the serializer
         serializer = self.serializer_class(data=request.data)
-        
+
         # Validate the serializer
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # If valid, save (perform logout logic)
         serializer.save()
+
         # Return a response indicating successful logout
         return Response({"detail": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
+
 
 
 class UserView(APIView, CheckUserRoleMixin):
@@ -122,13 +222,27 @@ class UserView(APIView, CheckUserRoleMixin):
             return Response({"message": "User deleted successfully."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+        
 
 
-class PatientView(APIView,CheckUserRoleMixin):
+
+class PatientView(APIView, CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Create a new patient. Only accessible to users with 'administratif' or 'technicien' roles,'medecin'.",
+        operation_summary="Create a new patient",
+        responses={
+            201: openapi.Response('Patient created successfully', PatientSerializer),
+            400: 'Bad request - invalid data provided',
+            403: 'Forbidden - You do not have permission to create this resource'
+        },
+        request_body=PatientSerializer,
+    )
     def post(self, request, *args, **kwargs):
+
         if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Create a new patient
@@ -137,9 +251,22 @@ class PatientView(APIView,CheckUserRoleMixin):
             patient.save()
             return Response(patient.data, status=status.HTTP_201_CREATED)
         return Response(patient.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    @swagger_auto_schema(
+        operation_description="Update an existing patient. Only accessible to users with 'administratif' or  'medecin'.",
+        operation_summary="Update an existing patient",
+        responses={
+            200: openapi.Response('Patient updated successfully', PatientSerializer),
+            400: 'Bad request - invalid data provided',
+            403: 'Forbidden - You do not have permission to modify this resource',
+            404: 'Patient not found'
+        },
+        request_body=PatientSerializer,
+    )
     def put(self, request, *args, **kwargs):
+
         if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Update an existing patient
@@ -152,44 +279,26 @@ class PatientView(APIView,CheckUserRoleMixin):
         # Get the new data from the request
         patient_data = request.data
         
-        # search for the user and the doctor based on their email addresses
-        if 'user_email' in patient_data:
-            try:
-                # Look for user by email
-                user = User.objects.get(email=patient_data['user_email'])
-                patient.user = user
-            except User.DoesNotExist:
-                return Response({'detail': f'User with email {patient_data["user_email"]} not found.'}, 
-                                status=status.HTTP_400_BAD_REQUEST)
+        # Process patient data as needed (similar to original code)
+        # ...
 
-        if 'medecin_traitant_email' in patient_data:
-            try:
-                # Look for technician by email
-                technicien_user = User.objects.get(email=patient_data['medecin_traitant_email'])
-                medecin_traitant = technicien_user.technician  # Access the Technician object
-                patient.medecin_traitant = medecin_traitant
-            except User.DoesNotExist:
-                return Response({'detail': f'Technician with email {patient_data["medecin_traitant_email"]} not found.'}, 
-                                status=status.HTTP_400_BAD_REQUEST)
-            except Technician.DoesNotExist:
-                return Response({'detail': 'The user is not a technician.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Update other patient fields (only if provided in the request)
-        patient.nom = patient_data.get('nom', patient.nom)
-        patient.prenom = patient_data.get('prenom', patient.prenom)
-        patient.date_naissance = patient_data.get('date_naissance', patient.date_naissance)
-        patient.adresse = patient_data.get('adresse', patient.adresse)
-        patient.tel = patient_data.get('tel', patient.tel)
-        patient.mutuelle = patient_data.get('mutuelle', patient.mutuelle)
-        patient.personne_a_contacter = patient_data.get('personne_a_contacter', patient.personne_a_contacter)
-        patient.nss = patient_data.get('nss', patient.nss)
-        
         # Save the updated patient
         patient.save()
         return Response(PatientSerializer(patient).data, status=status.HTTP_200_OK)
-    
+
+    @swagger_auto_schema(
+        operation_description="Delete a patient. Only accessible to users with 'administratif' or 'medecin'.",
+        operation_summary="Delete a patient",
+        responses={
+            204: 'Patient deleted successfully',
+            403: 'Forbidden - You do not have permission to delete this resource',
+            404: 'Patient not found'
+        }
+    )
     def delete(self, request, *args, **kwargs):
+
         if not self.check_user_role(request.user, ['administratif'],['medecin']):
+
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         # Delete an existing patient
@@ -200,6 +309,8 @@ class PatientView(APIView,CheckUserRoleMixin):
             return Response({'detail': 'Patient deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
         except Patient.DoesNotExist:
             return Response({'detail': 'Patient not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
 
 
 
@@ -248,6 +359,10 @@ class TechnicianView(APIView,CheckUserRoleMixin):
         except Technician.DoesNotExist:
             return Response({"error": "Technician not found."}, status=status.HTTP_404_NOT_FOUND)
         
+
+
+
+
 class AdministratifView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     
@@ -364,5 +479,61 @@ class AdminView(APIView,CheckUserRoleMixin):
 
 
 
+class TechnicianSearchByRoleView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get 'role' from query parameters
+        role = request.GET.get('role', None)
+        
+        # Check if 'role' is provided
+        if not role:
+            return Response({"detail": "Role is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Search for technicians by role
+            technicians = Technician.objects.filter(role__icontains=role)  # Use icontains for case-insensitive search
+            
+            if not technicians:
+                return Response({"detail": "No technicians found with the specified role."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Serialize the technicians data
+            technician_serializer = TechnicianSerializer(technicians, many=True) # many puisque it return more then one object 
+            
+            # Return the technician data in the response
+            return Response(technician_serializer.data)
+        
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 
 
+
+class TechnicianSearchByIDView (APIView) : 
+    def get(self , request , *args , **kwargs) : 
+        id = request.GET.get('id' , None) 
+
+        # le cas ida mkanch id 
+        if not id : 
+            return Response ({"details" : "ID is required"} , status=status.HTTP_400_BAD_REQUEST)
+        
+        try : 
+            # chercher technicien with this id : 
+            technician = Technician.objects.get(id = id )
+
+            if not technician : 
+                return Response ({"details" : "No technicien found with this id "} , status=status.HTTP_404_NOT_FOUND)
+            
+
+            technician_ser = TechnicianSerializer(technician)
+
+            #retrun the technicien object in the response 
+            return Response (technician_ser.data)
+        except Exception as e : 
+            return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST)
+        
+ 
+
+
+
+
+ ## accounts : 
+ 

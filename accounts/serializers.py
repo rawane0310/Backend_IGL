@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import User ,Technician , Patient ,Admin ,Administratif
 
 from rest_framework import serializers
@@ -23,19 +24,41 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = user.role  # Add custom claims
         return token
 
-# User Registration Serializer
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id','email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate(self, attrs):
+        # Initialize an error dictionary
+        errors = {}
+
+        # Check if email is missing
+        if not attrs.get('email'):
+            errors['email'] = ['This field is required.']
+
+        # Check if password is missing
+        if not attrs.get('password'):
+            errors['password'] = ['This field is required.']
+
+        # Raise ValidationError if there are errors
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return attrs  # Return validated attributes
+
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
+
+
+
 # Serializer for logging out the user
-
-
 
 class LogoutUserSerializer(serializers.Serializer):
     refresh = serializers.CharField()  # Expecting refresh token in the request body
@@ -117,6 +140,9 @@ class TechnicianSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
+
+
+
 class AdminstratifSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(write_only=True)  # the email field to create/update admin
 
@@ -134,6 +160,7 @@ class AdminstratifSerializer(serializers.ModelSerializer):
         
         # Create a new Admin object
         return Administratif.objects.create(user=user, **validated_data)
+
 
 
 
@@ -171,7 +198,7 @@ class AdminSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-"""""
+
 class PatientSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(write_only=True)  # Add a field for user email
     medecin_traitant_email = serializers.EmailField(write_only=True)  # Add a field for the medecin_traitant email
@@ -212,48 +239,4 @@ class PatientSerializer(serializers.ModelSerializer):
         return patient
     
 
-"""
-class PatientSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(write_only=True)  # Accept user_id instead of user_email
-    medecin_traitant_id = serializers.IntegerField(write_only=True)  # Accept medecin_traitant_id instead of medecin_traitant_email
-    class Meta:
-        model = Patient
-        fields = [
-            'id','nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
-            'medecin_traitant_id', 'personne_a_contacter', 'nss', 'user_id'
-        ]  # Include medecin_traitant_id and user_id in the fields
-    def create(self, validated_data):
-        # Extract the user and medecin_traitant ids from the validated data
-        user_id = validated_data.pop('user_id')
-        medecin_traitant_id = validated_data.pop('medecin_traitant_id')
-        
-        # Fetch the User object for the patient using the provided user_id
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            raise serializers.ValidationError(f"No user found with ID {user_id}")
-        
-        # Fetch the Technician object for the medecin_traitant using the provided medecin_traitant_id
-        try:
-            medecin_traitant = Technician.objects.get(id=medecin_traitant_id)
-        except Technician.DoesNotExist:
-            raise serializers.ValidationError(f"No technician found with ID {medecin_traitant_id}")
-        # Create the patient and include the user and medecin_traitant in the validated data
-        patient = Patient.objects.create(
-            user=user, 
-            medecin_traitant=medecin_traitant, 
-            **validated_data
-        )
-        return patient
-
-
-
-
-#pour rechercher tech par role _ id 
-class TechnicianSerializerSearch(serializers.ModelSerializer):
-   # user_email = serializers.EmailField(write_only=True)
-
-    class Meta:
-        model = Technician
-        fields = "__all__"
 

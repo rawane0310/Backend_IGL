@@ -5,6 +5,8 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+
 from accounts.models import Consultation , Ordonnance , Technician , DossierPatient, Resume
 from .serializers import ConsultationSerializer , OrdonnanceSerializer, ResumerSerializer
 import random
@@ -228,6 +230,67 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
         
 
+
+
+
+class ConsultationSearchByDateView(APIView) : 
+    def get( self , request , *args ,**kwargs ) : 
+        date  = request.GET.get ('date' , None)
+
+        if not date :  
+            return Response({"details " : "date is required"} , status=status.HTTP_400_BAD_REQUEST)
+        
+        try : 
+            consultation = Consultation.objects.filter(date=date)
+            if not consultation : 
+                return Response ({"details" : "noconsultation found with this date "}, status=status.HTTP_404_NOT_FOUND)
+            
+            cons_ser=ConsultationSerializer(consultation , many = True )
+
+            return Response (cons_ser.data)
+        except Exception as e : 
+            return Response ({"details" : str(e) }, status=status.HTTP_400_BAD_REQUEST)
+        
+
+            
+
+class ConsultationSearchByDpiView (APIView ) : 
+    def get (self , request , *args , **kwargs ) : 
+        dpi = request.GET.get('dpi' , None) 
+
+        if not dpi : 
+            return Response ({"details" : " dpi required "} , status=status.HTTP_400_BAD_REQUEST)
+        
+        try : 
+            consultation = Consultation.objects.filter (dossier = dpi )
+            if not consultation : 
+                return Response ({"details" : "no consultation with this dpi "} , status=status.HTTP_404_NOT_FOUND)
+
+            consult_ser = ConsultationSerializer(consultation , many = True) 
+            return Response (consult_ser.data) 
+        
+        except Exception as e :
+            return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST ) 
+
+
+
+class ConsultationSearchByTechnicienView (APIView) : 
+    def get (self , request , *args , **kwargs ) : 
+        tech = request.GET.get('tech' , None) 
+
+        if not tech : 
+            return Response ({"details" : " technicien required "} , status=status.HTTP_400_BAD_REQUEST)
+        
+        try : 
+            consultation = Consultation.objects.filter (medecin = tech)
+            if not consultation : 
+                return Response ({"details" : "no consultation with this technicien "} , status=status.HTTP_404_NOT_FOUND)
+
+            consult_ser = ConsultationSerializer(consultation , many = True) 
+            return Response (consult_ser.data) 
+        
+        except Exception as e :
+            return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST ) 
 
 class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]

@@ -1,6 +1,8 @@
 from django.urls import path
+
 from .views import DossierPatientCreateView , SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView
 from . import views
+
 
 urlpatterns = [
     path('dossier/create/', DossierPatientCreateView.as_view(), name='create-dossier'),
