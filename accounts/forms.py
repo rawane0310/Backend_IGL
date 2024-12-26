@@ -1,0 +1,25 @@
+from django import forms
+
+class LoginForm(forms.Form):
+    email = forms.EmailField(label="Email")
+    password = forms.CharField(widget=forms.PasswordInput, label="Mot de passe")
+
+
+class PatientAccountForm(forms.Form):
+    email = forms.EmailField(label="Email")
+    password = forms.CharField(widget=forms.PasswordInput, label="Mot de passe")
+
+
+
+
+class PatientProfileForm(forms.Form):
+    nom = forms.CharField(max_length=100, label="Nom")
+    prenom = forms.CharField(max_length=100, label="Prénom")
+    adresse = forms.CharField(max_length=255, label="Adresse")
+    date_naissance = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}), label="Date de naissance")
+    tel = forms.CharField(max_length=15, label="Numéro de téléphone")
+    mutuelle = forms.CharField(max_length=100, label="Mutuelle")
+    medecin_traitant_email = forms.CharField(max_length=100, label="medecin traitant email")
+    personne_a_contacter = forms.CharField(max_length=100, label="Personne à contacter")
+    nss = forms.CharField(max_length=100, label="Numéro de sécurité sociale")
+    user_email = forms.CharField(max_length=200, label="email d utilisateur")

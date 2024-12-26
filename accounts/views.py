@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer ,AdminstratifSerializer
 from .models import User , Technician , Patient , Admin , Administratif , DossierPatient
+
 
 from datetime import timedelta
 from django.http import JsonResponse
@@ -748,19 +750,123 @@ class TechnicianSearchByIDView(APIView):
         # Case when 'id' is not provided
         if not id:
             return Response({"details": "ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
             # Search for the technician with the provided ID
             technician = Technician.objects.get(id=id)
 
             # Serialize the technician object
-            technician_ser = TechnicianSerializer(technician)
-
-            # Return the technician object in the response
+            technician_ser = TechnicianSerializer(technician)   
+             # Return the technician object in the response
             return Response(technician_ser.data)
         except Technician.DoesNotExist:
             return Response({"details": "No technician found with this id"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        
+
+ 
+
  ## accounts : 
+
+ 
+ # test fonctionel
+from django.contrib.auth import authenticate, login
+from django.http import JsonResponse
+from django.shortcuts import render,redirect, get_object_or_404
+from rest_framework import serializers
+from  .forms import LoginForm,PatientAccountForm,PatientProfileForm
+
+
+def login_view(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=email, password=password)
+            
+            login(request, user)
+            return JsonResponse({"status": "success", "message": "Login successful"})
+           
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
+
+
+           
+
+
+def create_patient_account(request):
+    if request.method == 'POST':
+        form = PatientAccountForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            
+            user=User.objects.create (email=email, password=password,role="patient")
+            return JsonResponse({"status": "success", "message": "Account created", "email": email})
+    else:
+        form = PatientAccountForm()
+    return render(request, 'register.html', {'form': form})
+
+
+
+def create_patient_profile(request):
+    if request.method == 'POST':
+        form = PatientProfileForm(request.POST)
+
+        if form.is_valid():
+            # Récupérer les données du formulaire
+            nom = form.cleaned_data['nom']
+            prenom = form.cleaned_data['prenom']
+            adresse = form.cleaned_data['adresse']
+            date_naissance = form.cleaned_data['date_naissance']
+            tel = form.cleaned_data['tel']
+            mutuelle = form.cleaned_data['mutuelle']
+            medecin_traitant_email = form.cleaned_data['medecin_traitant_email']
+            personne_a_contacter = form.cleaned_data['personne_a_contacter']
+            nss = form.cleaned_data['nss']
+            user_email = form.cleaned_data['user_email']
+
+            # Fetch the User object for the patient using the provided email
+        try:
+            user = User.objects.get(email=user_email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"No user found with email {user_email}")
+        
+        # Fetch the User object for the medecin_traitant (Technician) using the provided email
+        try:
+            technicien_user = User.objects.get(email=medecin_traitant_email)
+            medecin_traitant = technicien_user.technician  # Access the Technician instance related to the User
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"No technician found with email {medecin_traitant_email}")
+        except Technician.DoesNotExist:
+            raise serializers.ValidationError(f"The user with email {medecin_traitant_email} is not a technician")
+
+        # Enregistrer le patient dans la base de données
+        patient = Patient.objects.create(
+                nom=nom,
+                prenom=prenom,
+                adresse=adresse,
+                date_naissance=date_naissance,
+                tel=tel,
+                mutuelle=mutuelle,
+                medecin_traitant=medecin_traitant,
+                personne_a_contacter=personne_a_contacter,
+                nss=nss,
+                user=user
+            )
+
+        return redirect(f"/accounts/patientT/{patient.id}/")
+
+        #return JsonResponse({"status": "success", "message": "Profile created", "patient_id": patient.id})
+    else:
+        form = PatientProfileForm()
+    return render(request, 'patient.html', {'form': form})
+
+
+def patient_profile(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id)
+    return render(request, 'patient_profile.html', {'patient': patient})
+
