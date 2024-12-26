@@ -17,18 +17,19 @@ class CheckUserRoleMixin:
             technician_roles: (Optionnel) Liste des rôles pour le modèle 'Technician' (ex: ['medecin', 'infirmier']).
 
         Returns:
-            bool: True si les rôles correspondent, sinon False.
+            bool: True si l'utilisateur satisfait au moins une condition, sinon False.
         """
         # Vérifie si l'utilisateur a un rôle autorisé
-        if user_roles and user.role not in user_roles:
-            return False
+        if user_roles and user.role in user_roles:
+            return True
 
-        # Si des rôles de technicien sont spécifiés, vérifie le modèle 'Technician'
+        # Vérifie les rôles de technicien si spécifiés
         if technician_roles:
             try:
-                return user.technician.role in technician_roles  # Vérifie si le rôle du technicien est dans la liste
+                if user.technician.role in technician_roles:
+                    return True
             except Technician.DoesNotExist:
                 return False  # Aucun modèle 'Technician' n'est associé
 
-        # Si tout correspond ou si aucune condition supplémentaire, retourne True
-        return True
+        # Si aucune des conditions n'est satisfaite, retourne False
+        return False

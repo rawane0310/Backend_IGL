@@ -12,7 +12,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        if not self.check_user_role(request.user, ['technicien','patient'],['medecin']):
+        if not self.check_user_role(request.user, ['patient'],['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         certificats = Certificat.objects.all()
@@ -20,7 +20,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
         return Response(serializer.data)
 
     def post(self, request):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = CertificatSerializer(data=request.data)
@@ -30,7 +30,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -45,7 +45,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
+        if not self.check_user_role(request.user,['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:

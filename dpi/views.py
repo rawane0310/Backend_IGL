@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render , redirect
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -18,11 +18,18 @@ from drf_yasg import openapi
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 
+################ test fonctionel######################
+from django.http import JsonResponse
+from .forms import DossierPatientForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+
+
 class DossierPatientCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien','administratif'],['medecin']):
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -55,7 +62,7 @@ class DossierPatientCreateView(APIView,CheckUserRoleMixin):
 class SupprimerDpiAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, dpi_id):
-        if not self.check_user_role(request.user, ['technicien','administratif'],['medecin']):
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -79,19 +86,19 @@ class ModifierDossierAPIView(APIView,CheckUserRoleMixin):
     
     permission_classes = [IsAuthenticated]
     def put(self, request, dpi_id):
-        if not self.check_user_role(request.user, ['technicien','administratif'],['medecin']):
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_dpi(request, dpi_id, partial=False)
 
     def patch(self, request, dpi_id):
-        if not self.check_user_role(request.user, ['technicien','administratif'],['medecin']):
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_dpi(request, dpi_id, partial=True)
 
     def update_dpi(self, request, dpi_id, partial):
-        if not self.check_user_role(request.user, ['technicien','administratif'],['medecin']):
+        if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -203,7 +210,47 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
 
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)    
         
-###########################################################################################################################################
+
+@login_required
+
+def create_dpi(request):
+    """
+    Vue pour créer un dossier DPI pour un patient.
+    """
+     # Vérifier les rôles de l'utilisateur avant de permettre la création du DPI
+    if not CheckUserRoleMixin().check_user_role(request.user, user_roles=['administratif'], technician_roles=['medecin']):
+        return JsonResponse({"error": "Vous n'avez pas la permission de créer ce dossier."}, status=403)
+
+
+    if request.method == "POST":
+        form = DossierPatientForm(request.POST)
+        if form.is_valid():
+            patient_id = form.cleaned_data['patient_id']
+           
+
+            try:
+                patient = Patient.objects.get(id=patient_id)
+                
+
+                # Vérifier si un dossier existe déjà pour ce patient
+                if DossierPatient.objects.filter(patient=patient).exists():
+                    return JsonResponse({"error": "Un dossier existe déjà pour ce patient."}, status=400)
+
+                # Créer le dossier DPI
+                dossier = DossierPatient.objects.create(patient=patient)
+
+                # Retourner un message de succès
+                return JsonResponse({"success": "DPI créé avec succès."}, status=201)
+            except Patient.DoesNotExist:
+                return JsonResponse({"error": "Patient introuvable."}, status=404)
+            
+        else:
+            return JsonResponse({"error": "Formulaire invalide."}, status=400)
+    else:
+        form = DossierPatientForm()
+
+    return render(request, "create_dpi.html", {'form': form})        
+
 
 
 
@@ -228,3 +275,4 @@ def search_patient_by_dossier(request, dossier_id):
         'nss': patient.nss,
     }
     return JsonResponse(response_data)
+
