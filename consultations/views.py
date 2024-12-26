@@ -30,6 +30,7 @@ class OrdonnanceCreateView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+###########################################################################################################################################
 
 
 class ConsultationCreateView(APIView,CheckUserRoleMixin):
@@ -83,7 +84,8 @@ class ConsultationCreateView(APIView,CheckUserRoleMixin):
 
         return Response({"error": f"Le resume avec l'ID {resume_id} n'existe pas."},serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
+###########################################################################################################################################
+
 class ResumeCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
@@ -100,6 +102,8 @@ class ResumeCreateView(APIView,CheckUserRoleMixin):
     
 
 
+###########################################################################################################################################
+ 
 
 class SupprimerConsultationAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -121,6 +125,10 @@ class SupprimerConsultationAPIView(APIView,CheckUserRoleMixin):
             status=status.HTTP_204_NO_CONTENT
         )
 
+###########################################################################################################################################
+
+
+
 class SupprimerOrdonnanceAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, ordonnance_id):
@@ -141,6 +149,9 @@ class SupprimerOrdonnanceAPIView(APIView,CheckUserRoleMixin):
             status=status.HTTP_204_NO_CONTENT
         )
     
+###########################################################################################################################################
+ 
+
 
 class SupprimerResumeAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -161,7 +172,10 @@ class SupprimerResumeAPIView(APIView,CheckUserRoleMixin):
             {'message': 'Resume supprimée avec succès.'},
             status=status.HTTP_204_NO_CONTENT
         )
-    
+###########################################################################################################################################
+
+
+
 class ModifierOrdonnanceAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
@@ -195,6 +209,8 @@ class ModifierOrdonnanceAPIV(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
     
+###########################################################################################################################################
+ 
 
 class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -230,7 +246,8 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
         
 
-
+###########################################################################################################################################
+ 
 
 
 class ConsultationSearchByDateView(APIView) : 
@@ -252,7 +269,8 @@ class ConsultationSearchByDateView(APIView) :
             return Response ({"details" : str(e) }, status=status.HTTP_400_BAD_REQUEST)
         
 
-            
+###########################################################################################################################################
+
 
 class ConsultationSearchByDpiView (APIView ) : 
     def get (self , request , *args , **kwargs ) : 
@@ -272,6 +290,7 @@ class ConsultationSearchByDpiView (APIView ) :
         except Exception as e :
             return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST ) 
 
+###########################################################################################################################################
 
 
 class ConsultationSearchByTechnicienView (APIView) : 
@@ -291,6 +310,9 @@ class ConsultationSearchByTechnicienView (APIView) :
         
         except Exception as e :
             return Response ({"details" : str(e)} , status=status.HTTP_400_BAD_REQUEST ) 
+        
+###########################################################################################################################################
+ 
 
 class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -325,7 +347,8 @@ class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)            
         
-
+###########################################################################################################################################
+ 
 
 class RechercheOrdonnanceAPIV(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -353,6 +376,8 @@ class RechercheOrdonnanceAPIV(APIView,CheckUserRoleMixin):
         resultats = list(ordonnances.values())
         return Response(resultats)
 
+###########################################################################################################################################
+ 
 
 class RechercheResume(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -382,7 +407,9 @@ class RechercheResume(APIView,CheckUserRoleMixin):
         resultats = list(resumes.values())
         return Response(resultats)                 
 
-
+###########################################################################################################################################
+ 
+ 
 class ValidationOrdonnance(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 

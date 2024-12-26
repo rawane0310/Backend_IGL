@@ -8,7 +8,7 @@ from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIVi
  
 
 urlpatterns = [
-    path('users/', UserView.as_view()),  # pour la creation (user)
+   #path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
 
     path('technicians/', TechnicianView.as_view()),  # For POST (creation)
@@ -31,5 +31,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='token_obtain_pair'), # first documenttion 
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
+
+    
 
 ]

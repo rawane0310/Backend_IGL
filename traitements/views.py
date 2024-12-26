@@ -45,6 +45,8 @@ class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+###########################################################################################################################################
+ 
 
 class MedicamentCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -93,6 +95,8 @@ class MedicamentCreateView(APIView,CheckUserRoleMixin):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+###########################################################################################################################################
+ 
 
 class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -114,6 +118,8 @@ class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
             status=status.HTTP_204_NO_CONTENT
         )
     
+###########################################################################################################################################
+ 
 
 class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -135,6 +141,8 @@ class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
             status=status.HTTP_204_NO_CONTENT
         )    
     
+###########################################################################################################################################
+ 
 
 class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -170,6 +178,9 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 
+###########################################################################################################################################
+ 
+
 class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
@@ -203,6 +214,8 @@ class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
     
+###########################################################################################################################################
+ 
 
 
 class RechercheMedicamentAPIView(APIView,CheckUserRoleMixin):
@@ -243,7 +256,9 @@ class RechercheMedicamentAPIView(APIView,CheckUserRoleMixin):
         resultats = list(medicaments.values())
         return Response(resultats)
 
-
+###########################################################################################################################################
+ 
+ 
 class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self, request):
