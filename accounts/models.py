@@ -118,7 +118,7 @@ class Patient(models.Model):
     medecin_traitant = models.ForeignKey(Technician, on_delete=models.SET_NULL, null=True, related_name='patients')
     personne_a_contacter = models.CharField(max_length=100)
     
-    nss = models.CharField(max_length=20) 
+    nss = models.CharField(max_length=100) 
 
 
 
@@ -132,7 +132,7 @@ class Ordonnance(models.Model):
 class DossierPatient(models.Model):
     
     patient = models.OneToOneField(Patient, on_delete=models.CASCADE, related_name='dossier')
-    qr = models.TextField()  # QR 
+    qr = models.ImageField(upload_to='qr_code/',blank=True, null=True)  # QR 
 
 # SoinInfermier model
 class SoinInfermier(models.Model):

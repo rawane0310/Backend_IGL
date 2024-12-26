@@ -206,7 +206,7 @@ class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
+            'id','nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
             'medecin_traitant_email', 'personne_a_contacter', 'nss', 'user_email'
         ]  # Include medecin_traitant_email and user_email in the fields
 
