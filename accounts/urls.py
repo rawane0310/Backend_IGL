@@ -39,3 +39,4 @@ urlpatterns = [
     path('create-profile/', create_patient_profile, name='create_patient_profile'),
     path('patientT/<int:patient_id>/', views.patient_profile, name='patient_profile'),
 
+]

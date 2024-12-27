@@ -340,7 +340,7 @@ def create_dpi(request):
     return render(request, 'dpi.html', {'form': form})
 
 
-    return render(request, "create_dpi.html", {'form': form})        
+            
 
 
 

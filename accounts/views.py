@@ -111,8 +111,12 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
             try:
                 technician = Technician.objects.get(user=user)
                 response.data['technician_role'] = technician.role
+                response.data['technicien_id'] = technician.id
+                response.data['nom'] = technician.nom
+                response.data['prenom'] = technician.prenom
             except Technician.DoesNotExist:
                 response.data['technician_role'] = None 
+                response.data['technicien_id'] = None
 
 
 
@@ -120,11 +124,33 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
             try:
                 patient = Patient.objects.get(user=user)
                 dossier = DossierPatient.objects.get(patient=patient)
-                response.data['dossier_id'] = dossier.id  
+                response.data['dossier_id'] = dossier.id 
+                response.data['patient_id'] = patient.id 
+                response.data['nom'] = patient.nom
+                response.data['prenom'] = patient.prenom
             except Patient.DoesNotExist:
                 response.data['dossier_id'] = None  #
+                response.data['patient_id'] = None
             except DossierPatient.DoesNotExist:
                 response.data['dossier_id'] = None 
+
+        if role == 'admin':
+            try:
+                admin = Admin.objects.get(user=user)
+                response.data['admin_id'] = admin.id
+                response.data['nom'] = admin.nom
+                response.data['prenom'] = admin.prenom
+            except Admin.DoesNotExist:
+                response.data['admin_id'] = None
+
+        if role == 'administratif':
+            try:
+                administratif = Administratif.objects.get(user=user)
+                response.data['administratif_id'] = administratif.id
+                response.data['nom'] = administratif.nom
+                response.data['prenom'] = administratif.prenom
+            except Administratif.DoesNotExist:
+                response.data['administratif_id'] = None 
 
         # Set the refresh token as a cookie
         response.set_cookie(

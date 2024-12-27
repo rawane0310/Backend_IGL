@@ -293,6 +293,19 @@ class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
         if dossier_id:
             soins = soins.filter(dossier_id=dossier_id)
         
-        # Préparer la réponse au format JSON
-        resultats = list(soins.values())
+        # Préparer les données pour inclure nom et prénom de l'infirmier
+        resultats = []
+        for soin in soins:
+            resultats.append({
+                'id': soin.id,
+                'date': soin.date,
+                'heure': soin.heure,
+                'observation': soin.observation,
+                'soin_realise': soin.soin_realise,
+                'dossier_id': soin.dossier_id,
+                'infirmier_id': soin.infirmier_id,
+                'infirmier_nom': soin.infirmier.nom if soin.infirmier else None,
+                'infirmier_prenom': soin.infirmier.prenom if soin.infirmier else None,
+            })
+
         return Response(resultats)
