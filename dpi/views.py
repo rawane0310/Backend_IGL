@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from accounts.models import DossierPatient, Patient
-from .serializers import DossierPatientSerializer , PatientSerializer
+from .serializers import DossierPatientSerializer , PatientSerializer, UserPatientSerializer
 import qrcode
 import io
 import base64
@@ -200,6 +200,65 @@ def search_patient_by_dossier(request, dossier_id):
         'nss': patient.nss,
     }
     return JsonResponse(response_data)
+
+from rest_framework.decorators import action
+
+from django.contrib.auth import get_user_model
+
+
+class creatuserPatientView(APIView):
+
+    @action(methods=['POST'], detail=False)
+    def post(self, request):
+
+        serializer = UserPatientSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+
+            # Get the custom User model
+            User = get_user_model() 
+
+            user = User.objects.create_user(
+                email=email, 
+                password=password, 
+                role="patient" 
+            )
+
+            patient_data = {
+                'user': user,
+                'nom': serializer.validated_data['nom'],
+                'prenom': serializer.validated_data['prenom'],
+                'date_naissance': serializer.validated_data['date_naissance'],
+                'adresse': serializer.validated_data['adresse'],
+                'tel': serializer.validated_data['tel'],
+                'mutuelle': serializer.validated_data['mutuelle'],
+                'medecin_traitant': serializer.validated_data['medecin_traitant'],
+                'personne_a_contacter': serializer.validated_data['personne_a_contacter'],
+                'nss': serializer.validated_data['nss'] , 
+            }
+            patient = Patient.objects.create(**patient_data)
+
+            # Génération du QR code
+            qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
+            qr_image = qrcode.make(qr_data)
+            buffer = io.BytesIO()
+            qr_image.save(buffer, format="PNG")
+            
+            buffer.seek(0)
+
+            # Création du fichier image pour l'ImageField
+            qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
+            buffer.close()
+             
+            dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
+
+
+
+            return Response({'message': 'Patient registered successfully , and dossier created successfully'}, status=status.HTTP_201_CREATED)
+        else : 
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 
 # test fonctionel
