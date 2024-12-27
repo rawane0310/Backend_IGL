@@ -169,7 +169,7 @@ class AdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Admin
-        fields = ['id', 'nom', 'prenom', 'user_email']  # Include user_email instead of user
+        fields = ['id', 'nom', 'prenom', 'user_email']  
 
     def create(self, validated_data):
         #  User object by the provided email

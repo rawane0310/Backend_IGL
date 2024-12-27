@@ -8,7 +8,7 @@ from . import views
  
 
 urlpatterns = [
-    path('users/', UserView.as_view()),  # pour la creation (user)
+   #path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
 
     path('technicians/', TechnicianView.as_view()),  # For POST (creation)
@@ -32,9 +32,10 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
 
+
     #pour test fonctionel
     path('loginTest/', login_view, name='loginTest'),
     path('create-account/', create_patient_account, name='create_patient_account'),
     path('create-profile/', create_patient_profile, name='create_patient_profile'),
     path('patientT/<int:patient_id>/', views.patient_profile, name='patient_profile'),
-]
+

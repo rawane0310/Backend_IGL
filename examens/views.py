@@ -56,6 +56,11 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         except ResultatExamen.DoesNotExist:
             return Response({'error': 'Résultat d\'examen non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
+
+
+###########################################################################################################################################
+ 
+
 class ExamenBiologiqueView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -117,6 +122,10 @@ class ExamenBiologiqueView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ExamenBiologique.DoesNotExist:
             return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+###########################################################################################################################################
+
 
 class ExamenRadiologiqueView(APIView):
     permission_classes = [IsAuthenticated]
@@ -182,6 +191,9 @@ class ExamenRadiologiqueView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except ExamenRadiologique.DoesNotExist:
             return Response({'error': 'Examen Radiologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+        
+###########################################################################################################################################
+
 
 
 class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
@@ -211,6 +223,10 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
             return Response(examens_bio_serializer.data)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+###########################################################################################################################################
+ 
 
 class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -241,6 +257,10 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+###########################################################################################################################################
+
+
+
 class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
@@ -264,6 +284,8 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+###########################################################################################################################################
 
 
 class GraphiquePatientView(APIView):

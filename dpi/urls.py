@@ -15,5 +15,9 @@ urlpatterns = [
 
     #pour test fonctionel
     path('create-dpi/', create_dpi, name='create_dpi'),
+
+    
+
+
     
 ]
