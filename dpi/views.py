@@ -7,6 +7,7 @@ from accounts.models import DossierPatient, Patient
 from .serializers import DossierPatientSerializer , PatientSerializer, UserPatientSerializer
 import qrcode
 import io
+import json
 import base64
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
@@ -44,8 +45,9 @@ class DossierPatientCreateView(APIView,CheckUserRoleMixin):
                 return Response({"error": "Un dossier existe déjà pour ce patient."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Génération du QR code
-            qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
-            qr_image = qrcode.make(qr_data)
+            qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+            qr_image = qrcode.make(qr_data_str)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
             
@@ -284,8 +286,9 @@ class creatuserPatientView(APIView):
             patient = Patient.objects.create(**patient_data)
 
             # Génération du QR code
-            qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
-            qr_image = qrcode.make(qr_data)
+            qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+            qr_image = qrcode.make(qr_data_str)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
             
@@ -322,8 +325,9 @@ def create_dpi(request):
                 return Response({"error": "Un dossier existe déjà pour ce patient."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Génération du QR code
-        qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
-        qr_image = qrcode.make(qr_data)
+        qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+        qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+        qr_image = qrcode.make(qr_data_str)
         buffer = io.BytesIO()
         qr_image.save(buffer, format="PNG")
             
