@@ -360,14 +360,19 @@ class creatuserPatientView(APIView):
             }
             patient = Patient.objects.create(**patient_data)
 
-
+            # Génération du QR code
             qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
             qr_image = qrcode.make(qr_data)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
-            qr_base64 = base64.b64encode(buffer.getvalue()).decode()  # Encodage en base64
+            
+            buffer.seek(0)
+
+            # Création du fichier image pour l'ImageField
+            qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
             buffer.close()
-            dossier = DossierPatient.objects.create(patient=patient, qr=qr_base64)
+             
+            dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
 
 
 
