@@ -2,12 +2,14 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.models  import ExamenRadiologique , ExamenBiologique , ResultatExamen, Technician
-from .serializers import ExamenRadiologiqueSerializer , ExamenBiologiqueSerializer , ResultatExamenSerializer
+from accounts.models  import ExamenRadiologique , ExamenBiologique , ResultatExamen, Technician, RadiologyImage
+from .serializers import ExamenRadiologiqueSerializer , ExamenBiologiqueSerializer , ResultatExamenSerializer, RadiologyImageSerializer
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from accounts.mixin import CheckUserRoleMixin
+from django.shortcuts import get_object_or_404
+
 
 class ResultatExamenView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -196,6 +198,83 @@ class ExamenRadiologiqueView(APIView):
 
 
 
+class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
+    """
+    API pour gérer les opérations CRUD et la recherche sur RadiologyImage.
+    """
+    permission_classes=[IsAuthenticated]
+
+    def post(self, request):
+        
+        """
+        Créer une nouvelle image radiologique.
+        """
+        if not self.check_user_role(request.user,technician_roles=['radiologue']):
+            return Response({'error': 'You do not have permission to creta this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = RadiologyImageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, pk):
+        
+        """
+        Modifier une image radiologique existante.
+        """
+        if not self.check_user_role(request.user,technician_roles=['radiologue']):
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+        image = get_object_or_404(RadiologyImage, pk=pk)
+        serializer = RadiologyImageSerializer(image, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        
+        """
+        Supprimer une image radiologique.
+        """
+        if not self.check_user_role(request.user,technician_roles=['radiologue']):
+            return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+        image = get_object_or_404(RadiologyImage, pk=pk)
+        image.delete()
+        return Response({'message': 'Image deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+    def get(self, request):
+        """
+        Rechercher des images radiologiques par ID, image ou date.
+        """
+        if not self.check_user_role(request.user,['patient'],['radiologue','medecin']):
+            return Response({'error': 'You do not have permission to get this resource.'}, status=status.HTTP_403_FORBIDDEN)
+
+        image_id = request.GET.get('id')
+        image_path = request.GET.get('image')
+        date_uploaded = request.GET.get('date')
+        image_examen = request.GET.get('examen')
+
+        # Filtrage
+        images = RadiologyImage.objects.all()
+        if image_id:
+            images = images.filter(id=image_id)
+        if image_path:
+            images = images.filter(image__icontains=image_path)
+        if date_uploaded:
+            images = images.filter(uploaded_at__date=date_uploaded)
+        if image_examen:
+            images = images.filter(examen_radiologique=image_examen)
+
+        serializer = RadiologyImageSerializer(images, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+###########################################################################################################################################
 class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
@@ -203,21 +282,29 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
+        id = request.GET.get('id',None)
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
         dossier = request.GET.get('dossier', None)
         description = request.GET.get('description', None)
+        laborantin = request.GET.get('laborantin',None)
 
         try:
             examens_bio = ExamenBiologique.objects.all()
+
+            if id:
+                examens_bio = examens_bio.filter(id=id)
             if technicien:
                 examens_bio = examens_bio.filter(technicien__nom__icontains=technicien)
             if date:
                 examens_bio = examens_bio.filter(date=date)
             if dossier:
-                examens_bio = examens_bio.filter(dossier__icontains=dossier)
+                examens_bio = examens_bio.filter(dossier_patient__id=dossier)
             if description:
                 examens_bio = examens_bio.filter(description__icontains=description)
+            if laborantin:
+                examens_bio = examens_bio.filter(laborantin__nom__icontains=laborantin)
+
 
             examens_bio_serializer = ExamenBiologiqueSerializer(examens_bio, many=True)
             return Response(examens_bio_serializer.data)
@@ -235,17 +322,26 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
+        id = request.GET.get('id',None)
         technicien = request.GET.get('technicien', None)
         date = request.GET.get('date', None)
+        radiologue = request.GET.get('radiologue',None)
+        compte_rendu = request.GET.get('compte_rendu',None)
         dossier = request.GET.get('dossier', None)
         description = request.GET.get('description', None)
 
         try:
             examens_radio = ExamenRadiologique.objects.all()
+            if id:
+                examens_radio = examens_radio.filter(id=id)
             if technicien:
                 examens_radio = examens_radio.filter(technicien__nom__icontains=technicien)
             if date:
                 examens_radio = examens_radio.filter(date=date)
+            if radiologue:
+                examens_radio = examens_radio.filter(radiologue__nom__icontains=radiologue)
+            if compte_rendu:
+                examens_radio = examens_radio.filter(compte_rendu__icontains=compte_rendu)       
             if dossier:
                 examens_radio = examens_radio.filter(dossier__icontains=dossier)
             if description:
@@ -269,18 +365,22 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         id_examen_bio = request.GET.get('idExamenBio', None)
+        parametre = request.GET.get('parametre',None)
 
         if not id_examen_bio:
             return Response({"detail": "idExamenBio is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            resultat = ResultatExamen.objects.get(examen_biologique__id=id_examen_bio)
+            resultat = ResultatExamen.objects.filter(examen_biologique__id=id_examen_bio)
 
             if not resultat:
                 return Response({"detail": "No result found for the given idExamenBio."}, status=status.HTTP_404_NOT_FOUND)
 
-            resultat_serializer = ResultatExamenSerializer(resultat)
-            return Response(resultat_serializer.data)
+            if parametre:
+                resultat = resultat.filter(parametre=parametre)
+
+            resultat_serializer = ResultatExamenSerializer(resultat, many=True)
+            return Response(resultat_serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

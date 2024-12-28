@@ -195,17 +195,29 @@ class Certificat(models.Model):
 class ExamenRadiologique(models.Model):
     date = models.DateField()
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_radiologiques',null=True)
-    image = models.ImageField(upload_to='radiology_images/',blank=True, null=True)
+    radiologue = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_radiologiques_radio',null=True)
+    
     compte_rendu = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_radiologiques')
 
+class RadiologyImage(models.Model):
+    """
+    Modèle pour stocker les images associées à un examen radiologique.
+    """
+    examen_radiologique = models.ForeignKey(
+        'ExamenRadiologique',
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    image = models.ImageField(upload_to='radiology_images/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class ExamenBiologique(models.Model):
     date = models.DateField()
 
     technicien = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques',null=True)   
-
+    laborantin = models.ForeignKey(Technician, on_delete=models.SET_NULL, related_name='examens_biologiques_labo',null=True)
     description = models.TextField(blank=True, null=True)
     dossier_patient = models.ForeignKey(DossierPatient, on_delete=models.CASCADE, related_name='examens_biologiques')
 
@@ -225,9 +237,7 @@ class ResultatExamen(models.Model):
     
 
 
-    class Meta:
-        unique_together = ('parametre', 'examen_biologique')
-
+    
 
 
 #class ExamenBiologiqueResultat(models.Model):
