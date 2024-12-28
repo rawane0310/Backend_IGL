@@ -22,7 +22,7 @@ class CheckUserRoleMixin:
         # Vérifie si l'utilisateur a un rôle autorisé
         if user_roles and user.role in user_roles:
             return True
-
+        
         # Vérifie les rôles de technicien si spécifiés
         if technician_roles:
             try:

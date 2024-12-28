@@ -99,8 +99,7 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
         user = self.get_user_from_request(request)
         role = user.role if user else None
 
-        response.data['nom'] = user.first_name
-        response.data['prenom'] = user.last_name
+        
         response.data['userID'] = user.id
 
 
@@ -391,7 +390,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
         }
     )
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = TechnicianSerializer(data=request.data)
@@ -413,7 +412,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
         }
     )
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien']):
+        if not self.check_user_role(request.user,['technicien']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -438,7 +437,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
     )
 
     def delete(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -457,7 +456,7 @@ class AdministratifView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         """
@@ -471,7 +470,7 @@ class AdministratifView(APIView,CheckUserRoleMixin):
     
      # Update an existing administratif (PUT)
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif']):
+        if not self.check_user_role(request.user,['administratif']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -625,6 +624,7 @@ class AdminView(APIView,CheckUserRoleMixin):
 
 
 class TechnicianSearchByRoleView(APIView):
+    permission_classes=[IsAuthenticated]
     """
     API endpoint to search for technicians by role.
     """
@@ -686,6 +686,7 @@ class TechnicianSearchByRoleView(APIView):
             ),
         }
     )
+    
     def get(self, request, *args, **kwargs):
         # Get 'role' from query parameters
         role = request.GET.get('role', None)
@@ -718,7 +719,7 @@ class TechnicianSearchByIDView(APIView):
     """
     API endpoint to search for a technician by ID.
     """
-
+    permission_classes=[IsAuthenticated]
     @swagger_auto_schema(
         operation_description="Search for a technician by their unique ID.",
         manual_parameters=[
