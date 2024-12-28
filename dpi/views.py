@@ -225,6 +225,7 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
 ## retrun patitn object by id 
 @login_required
 def search_patient_by_dossier(request, dossier_id):
+    
     # Try to retrieve the dossier and associated patient
     dossier = get_object_or_404(DossierPatient, id=dossier_id)
     patient = dossier.patient
@@ -252,10 +253,12 @@ from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
 
 
-class creatuserPatientView(APIView):
-
+class creatuserPatientView(APIView,CheckUserRoleMixin):
+    permission_classes=[IsAuthenticated]
     @action(methods=['POST'], detail=False)
     def post(self, request):
+        if not self.check_user_role(request.user,['administratif'],['medecin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = UserPatientSerializer(data=request.data)
         if serializer.is_valid():

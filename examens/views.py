@@ -21,7 +21,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.data)
 
     def post(self, request):
-        if not self.check_user_role(request.user,['laborantin']):
+        if not self.check_user_role(request.user,technician_roles=['laborantin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = ResultatExamenSerializer(data=request.data)
@@ -31,7 +31,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk):
-        if not self.check_user_role(request.user,['laborantin','medecin']):
+        if not self.check_user_role(request.user,technician_roles=['laborantin','medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -46,7 +46,7 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if not self.check_user_role(request.user,['laborantin']):
+        if not self.check_user_role(request.user,technician_roles=['laborantin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -291,7 +291,7 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 class GraphiquePatientView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, patient_id):
-        if not self.check_user_role(request.user,['laborantin','medecin']):
+        if not self.check_user_role(request.user,technician_roles=['laborantin','medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         examens = ExamenBiologique.objects.filter(dossier_patient_id=patient_id)
