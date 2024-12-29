@@ -6,7 +6,7 @@ from accounts.models import ResultatExamen , ExamenBiologique , ExamenRadiologiq
 class RadiologyImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = RadiologyImage
-        fields = ['id','examen_radiologique','image','uploaded_at']
+        fields = ['id','examen_radiologique','image','uploaded_at','titre']
 
 
 class ExamenRadiologiqueSerializer(serializers.ModelSerializer):

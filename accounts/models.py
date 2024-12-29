@@ -212,6 +212,7 @@ class RadiologyImage(models.Model):
     )
     image = models.ImageField(upload_to='radiology_images/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    titre = models.TextField(blank=True, null=True)
 
 class ExamenBiologique(models.Model):
     date = models.DateField()
