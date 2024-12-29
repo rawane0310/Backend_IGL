@@ -3,3 +3,10 @@
     {{ form.as_p }}
     <button type="submit">Creer</button>
 </form>
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
