@@ -257,6 +257,7 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
         image_path = request.GET.get('image')
         date_uploaded = request.GET.get('date')
         image_examen = request.GET.get('examen')
+        titre = request.GET.get('titre')
 
         # Filtrage
         images = RadiologyImage.objects.all()
@@ -268,6 +269,8 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             images = images.filter(uploaded_at__date=date_uploaded)
         if image_examen:
             images = images.filter(examen_radiologique=image_examen)
+        if titre : 
+            images = images.filter(titre=titre)    
 
         serializer = RadiologyImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -306,10 +309,35 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
                 examens_bio = examens_bio.filter(laborantin__nom__icontains=laborantin)
 
 
-            examens_bio_serializer = ExamenBiologiqueSerializer(examens_bio, many=True)
-            return Response(examens_bio_serializer.data)
+            # Construction de la réponse avec les objets et les informations du technicien
+            result = []
+            for examen in examens_bio:
+                result.append({
+                    'id': examen.id,
+                    'date': examen.date,
+                    'description': examen.description,
+                    'dossier_patient': examen.dossier_patient.id,
+                    'technicien':examen.technicien,
+                    'nom_medecin': examen.technicien.nom,
+                    'prenom_medecin': examen.technicien.prenom,
+                    'laborantin': examen.laborantin,
+                    'nom_lab': examen.laborantin.nom,
+                    'prenom_lab': examen.laborantin.prenom
+                   
+                })
+
+            return Response(result, status=status.HTTP_200_OK)
+        
+        except ExamenBiologique.DoesNotExist:
+            return Response(
+                {"error": "No biological exams found matching the criteria."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
 
 ###########################################################################################################################################
@@ -347,11 +375,37 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
             if description:
                 examens_radio = examens_radio.filter(description__icontains=description)
 
-            examens_radio_serializer = ExamenRadiologiqueSerializer(examens_radio, many=True)
-            return Response(examens_radio_serializer.data)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            # Construction de la réponse avec les objets et les informations du technicien
+            result = []
+            for examen in examens_radio:
+                result.append({
+                    'id': examen.id,
+                    'date': examen.date,
+                    'description': examen.description,
+                    'dossier_patient': examen.dossier_patient.id,
+                    'compte_rendu' : examen.compte_rendu,
+                    'technicien':examen.technicien,
+                    'nom_medecin': examen.technicien.nom,
+                    'prenom_medecin': examen.technicien.prenom,
+                    'radiologue': examen.radiologue,
+                    'nom_radiologue': examen.radiologue.nom,
+                    'prenom_radiologue': examen.radiologue.prenom
+                   
+                })
 
+            return Response(result, status=status.HTTP_200_OK)
+        
+        except ExamenRadiologique.DoesNotExist:
+            return Response(
+                {"error": "No radiological exams found matching the criteria."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
 
 ###########################################################################################################################################
 
