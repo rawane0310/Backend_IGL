@@ -3,7 +3,7 @@ from .views import TechnicianSearchByRoleView , TechnicianSearchByIDView
 
 from django.urls import path
 from .views import UserView , TechnicianView , PatientView , AdminView ,AdministratifView
-from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView, login_view, create_patient_account , create_patient_profile
+from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView, login_view
 from . import views
  
 
@@ -35,8 +35,5 @@ urlpatterns = [
 
     #pour test fonctionel
     path('loginTest/', login_view, name='loginTest'),
-    path('create-account/', create_patient_account, name='create_patient_account'),
-    path('create-profile/', create_patient_profile, name='create_patient_profile'),
-    path('patientT/<int:patient_id>/', views.patient_profile, name='patient_profile'),
-
+    
 ]

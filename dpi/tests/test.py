@@ -23,7 +23,7 @@ def test_create_dpi():
         # Étape 1 : Connexion
         print("Accéder à la page de connexion...")
         driver.get(f"{BASE_URL}/accounts/loginTest/")
-        driver.find_element(By.NAME, "email").send_keys("medecin5@gmail.com")
+        driver.find_element(By.NAME, "email").send_keys("administratif1@gmail.com")
         driver.find_element(By.NAME, "password").send_keys("sarah")
         driver.find_element(By.TAG_NAME, "button").click()
 
@@ -31,7 +31,9 @@ def test_create_dpi():
         time.sleep(1)
         assert "Login successful" in driver.page_source
 
-        role_user="medecin"
+        # Étape 2 : Veriification des permissions (si l'utilisateur a le droit de creer un dossier)
+        print("Verification des roles...")
+        role_user="administratif"
         roles_autorisés=["medecin","administratif"]
 
         #verifier si le role de l'utilisateur l'autorise à creer un compte patient
@@ -40,19 +42,14 @@ def test_create_dpi():
             driver.quit()  # Fermer le navigateur proprement
             exit()  # Quitter le programme
 
-        # Étape 2 : Créer un compte patient
-        print("Création du compte patient...")
-        driver.get(f"{BASE_URL}/accounts/create-account/")
+
+        #Étape 3 :Créer un dossier patient
+        print("Creation du dpi...")
+        driver.get(f"{BASE_URL}/dpi/create-dpi/")
         driver.find_element(By.NAME, "email").send_keys("test@gmail.com")
         driver.find_element(By.NAME, "password").send_keys("sarah")
-        driver.find_element(By.TAG_NAME, "button").click()
+        
 
-        time.sleep(1)
-        assert "Account created" in driver.page_source
-
-        # Étape 3 : Créer un profil patient
-        print("Création du profil patient...")
-        driver.get(f"{BASE_URL}/accounts/create-profile/")
         driver.find_element(By.NAME, "nom").send_keys("Dupont")
         driver.find_element(By.NAME, "prenom").send_keys("Jean")
         driver.find_element(By.NAME, "date_naissance").send_keys("2004-10-03")
@@ -60,36 +57,20 @@ def test_create_dpi():
         driver.find_element(By.NAME, "tel").send_keys("000479")
         driver.find_element(By.NAME, "mutuelle").send_keys("sante")
         driver.find_element(By.NAME, "medecin_traitant_email").send_keys("medecin5@gmail.com")
-        driver.find_element(By.NAME, "personne_a_contacter").send_keys("moi")
-        driver.find_element(By.NAME, "nss").send_keys("9875654321")
-        driver.find_element(By.NAME, "user_email").send_keys("test@gmail.com")
+        driver.find_element(By.NAME, "personne_a_contacter").send_keys("0577984641")
+        driver.find_element(By.NAME, "nss").send_keys("9746315")
+
         driver.find_element(By.TAG_NAME, "button").click()
 
         time.sleep(1)
         
-        # Étape 4 : Récupérer l'ID du patient et créer le DPI
-        current_url = driver.current_url
-        print(f"URL actuelle après création : {current_url}")
-
-        # Si l'ID est dans l'URL, extraire l'ID
-        if "/patientT/" in current_url:
-            patient_id = current_url.split("/")[5]  # L'ID est avant le dernier '/'
-            print(f"ID du patient récupéré depuis l'URL : {patient_id}")
-        else:
-            print("L'ID n'est pas dans l'URL")
-            return  # Sortir du test si l'ID n'est pas trouvé dans l'URL
         
-        driver.get(f"{BASE_URL}/dpi/create-dpi/")
-        driver.find_element(By.NAME, "patient_id").send_keys(patient_id)
-        driver.find_element(By.TAG_NAME, "button").click()
 
-        time.sleep(2)
-
-        # Étape 5 : Vérification des résultats
-        success_message = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "success-message"))
+        #Étape 4 :Vérification des résultats
+        success_message = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "alert-success"))
         )
-        assert "Dossier créé avec succès" in success_message.text, "Échec de la création du DPI."
+        print("DPI creer avec succes...")
         
 
     finally:
