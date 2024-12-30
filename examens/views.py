@@ -317,12 +317,12 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
                     'date': examen.date,
                     'description': examen.description,
                     'dossier_patient': examen.dossier_patient.id,
-                    'technicien':examen.technicien,
+                    'technicien':examen.technicien.id,
                     'nom_medecin': examen.technicien.nom,
                     'prenom_medecin': examen.technicien.prenom,
-                    'laborantin': examen.laborantin,
-                    'nom_lab': examen.laborantin.nom,
-                    'prenom_lab': examen.laborantin.prenom
+                    'laborantin': examen.laborantin.id if examen.laborantin else None,
+                    'nom_lab': examen.laborantin.nom if examen.laborantin else None,
+                    'prenom_lab': examen.laborantin.prenom if examen.laborantin else None
                    
                 })
 
@@ -344,11 +344,11 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
  
 
 class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
-            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        #if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
+         #   return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         id = request.GET.get('id',None)
         technicien = request.GET.get('technicien', None)
@@ -384,12 +384,12 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
                     'description': examen.description,
                     'dossier_patient': examen.dossier_patient.id,
                     'compte_rendu' : examen.compte_rendu,
-                    'technicien':examen.technicien,
+                    'technicien':examen.technicien.id,
                     'nom_medecin': examen.technicien.nom,
                     'prenom_medecin': examen.technicien.prenom,
-                    'radiologue': examen.radiologue,
-                    'nom_radiologue': examen.radiologue.nom,
-                    'prenom_radiologue': examen.radiologue.prenom
+                    'radiologue': examen.radiologue.id if examen.radiologue else None,
+                    'nom_radiologue': examen.radiologue.nom if examen.radiologue else None,
+                    'prenom_radiologue': examen.radiologue.prenom if examen.radiologue else None
                    
                 })
 
