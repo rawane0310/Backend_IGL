@@ -28,6 +28,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.core.files.base import ContentFile
 
 
+import json
 
 
 
@@ -281,7 +282,7 @@ def search_patient_by_dossier(request, dossier_id):
         'personne_a_contacter': patient.personne_a_contacter,
         'nss': patient.nss,
     }
-    return JsonResponse(response_data)
+    return JsonResponse(response_data) 
 
 
 
@@ -379,6 +380,8 @@ class creatuserPatientView(APIView, CheckUserRoleMixin):
 
             # Génération du QR code
             qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
+            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+
             qr_image = qrcode.make(qr_data)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
