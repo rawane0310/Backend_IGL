@@ -260,6 +260,7 @@ def create_dpi(request):
 
 ## retrun patitn object by id 
 
+
 def search_patient_by_dossier(request, dossier_id):
     # Try to retrieve the dossier and associated patient
     dossier = get_object_or_404(DossierPatient, id=dossier_id)
@@ -327,18 +328,32 @@ from rest_framework.decorators import action
 from django.contrib.auth import get_user_model
 
 
-class creatuserPatientView(APIView):
+class creatuserPatientView(APIView, CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+
 
     @action(methods=['POST'], detail=False)
     def post(self, request):
+        if not self.check_user_role(request.user, user_roles=['administratif'], technician_roles=['medecin']):
+            return Response(
+                {'error': 'You do not have permission to create a patient user.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = UserPatientSerializer(data=request.data)
+
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
 
             # Get the custom User model
             User = get_user_model() 
+
+            if User.objects.filter(email=email).exists() : 
+                return Response( 
+                    {'error' : f"a user with this email {email} already exist "} , status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            password = serializer.validated_data['password']
 
             user = User.objects.create_user(
                 email=email, 
