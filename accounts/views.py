@@ -454,7 +454,34 @@ class TechnicianView(APIView,CheckUserRoleMixin):
 
 class AdministratifView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
-    
+
+    #create new administratif (post)
+    @swagger_auto_schema(
+        operation_summary="Create a new administratif",
+        operation_description="Allows users with the administrator role to create a new administratif by providing the necessary details.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Last name of the administratif user"),
+                "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Firest name of the administratif user"),
+                "user": openapi.Schema(type=openapi.TYPE_STRING, description="id of the user in User table administratif user"),
+            },
+            required=["nom", "prenom", "user"],
+        ),
+        responses={
+            201: openapi.Response("Created", openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the created administratif"),
+                    "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Email of the administratif"),
+                    "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
+                    "user": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
+                }
+            )),
+            400: "Bad Request",
+            403: "Forbidden",
+        }
+    )
     def post(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -468,7 +495,32 @@ class AdministratifView(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-     # Update an existing administratif (PUT)
+    # Update an existing administratif (PUT)
+    @swagger_auto_schema(
+        operation_summary="Update an existing administratif",
+        operation_description="Allows users with the administratif role to update their details by providing the administratif ID and updated data.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name of the administratif user"),
+                "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email of the administratif user"),
+            },
+        ),
+        responses={
+            200: openapi.Response("OK", openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the administratif"),
+                    "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name"),
+                    "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email"),
+                }
+            )),
+            400: "Bad Request",
+            403: "Forbidden",
+            404: "Not Found",
+        }
+    )
+     
     def put(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,['administratif']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -485,6 +537,15 @@ class AdministratifView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete an administratif (DELETE)
+    @swagger_auto_schema(
+        operation_summary="Delete an administratif",
+        operation_description="Allows users with the administratif role to delete an administratif by providing its ID.",
+        responses={
+            200: "Administratif deleted successfully.",
+            403: "Forbidden",
+            404: "Not Found",
+        }
+    )
     def delete(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['administratif']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
