@@ -444,29 +444,43 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 
 class GraphiquePatientView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request, patient_id):
-        if not self.check_user_role(request.user,technician_roles=['laborantin','medecin']):
+
+    def get(self, request, id_examen):
+        if not self.check_user_role(request.user, technician_roles=['laborantin', 'medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        examens = ExamenBiologique.objects.filter(dossier_patient_id=patient_id)
+        examen_actuel = ExamenBiologique.objects.filter(id=id_examen).first()
 
-        if not examens:
-            return Response({"detail": "Aucun examen trouvé pour ce patient"}, status=status.HTTP_404_NOT_FOUND)
+        if not examen_actuel:
+            return Response({"detail": "Examen non trouvé"}, status=status.HTTP_404_NOT_FOUND)
 
-        data = {}
+        examen_precedent = ExamenBiologique.objects.filter(
+            dossier_patient_id=examen_actuel.dossier_patient_id,
+            date__lt=examen_actuel.date
+        ).order_by('-date').first()
 
-        for examen in examens:
-            resultats = ResultatExamen.objects.filter(examen_biologique=examen)
+        resultats_actuel = ResultatExamen.objects.filter(examen_biologique=examen_actuel)
+        resultats_precedent = []
 
-            for resultat in resultats:
-                if resultat.parametre not in data:
-                    data[resultat.parametre] = {
-                        "dates": [],
-                        "valeurs": [],
-                        "unites": []
-                    }
-                data[resultat.parametre]["dates"].append(examen.date)
-                data[resultat.parametre]["valeurs"].append(resultat.valeur)
-                data[resultat.parametre]["unites"].append(resultat.unite)
+        if examen_precedent:
+            resultats_precedent = ResultatExamen.objects.filter(examen_biologique=examen_precedent)
+
+        data = {
+            "examen_actuel": {},
+            "examen_precedent": {}
+        }
+
+  
+        for resultat in resultats_actuel:
+            data["examen_actuel"][resultat.parametre] = {
+                "valeur": resultat.valeur,
+                "unite": resultat.unite
+            }
+
+        for resultat in resultats_precedent:
+            data["examen_precedent"][resultat.parametre] = {
+                "valeur": resultat.valeur,
+                "unite": resultat.unite
+            }
 
         return Response(data, status=status.HTTP_200_OK)
