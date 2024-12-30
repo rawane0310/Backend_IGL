@@ -1,10 +1,18 @@
 from rest_framework import serializers
-from accounts.models import ResultatExamen , ExamenBiologique , ExamenRadiologique
+from accounts.models import ResultatExamen , ExamenBiologique , ExamenRadiologique , RadiologyImage
+
+
+
+class RadiologyImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RadiologyImage
+        fields = ['id','examen_radiologique','image','uploaded_at','titre']
+
 
 class ExamenRadiologiqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamenRadiologique
-        fields = ['id', 'date', 'technicien', 'image', 'compte_rendu','description', 'dossier_patient']
+        fields = ['id', 'date', 'technicien', 'radiologue', 'compte_rendu','description', 'dossier_patient']
 
 class ResultatExamenSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,4 +23,4 @@ class ExamenBiologiqueSerializer(serializers.ModelSerializer):
     resultats = ResultatExamenSerializer(many=True, read_only=True)   
     class Meta:
         model = ExamenBiologique
-        fields = ['id', 'date', 'technicien', 'description', 'dossier_patient','resultats']
+        fields = ['id', 'date', 'technicien', 'laborantin', 'description', 'dossier_patient','resultats']

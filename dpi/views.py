@@ -3,15 +3,20 @@ from django.shortcuts import render , redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from accounts.models import DossierPatient, Patient
-from .serializers import DossierPatientSerializer , PatientSerializer ,UserPatientSerializer
+from accounts.models import DossierPatient, Patient , Technician
+from .serializers import DossierPatientSerializer , PatientSerializer, UserPatientSerializer
+
 import qrcode
 import io
+import json
 import base64
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from accounts.mixin import CheckUserRoleMixin
+
+from django.core.files.base import ContentFile
+
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -28,16 +33,20 @@ from django.views.decorators.csrf import csrf_protect
 from django.core.files.base import ContentFile
 
 
+
+from rest_framework.decorators import action
+
+from django.contrib.auth import get_user_model
 import json
 
 
 
 class DossierPatientCreateView(APIView,CheckUserRoleMixin):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif'],['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+       # if not self.check_user_role(request.user, ['administratif'],['medecin']):
+            #return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             patient_id = request.data.get('patient')
@@ -48,15 +57,20 @@ class DossierPatientCreateView(APIView,CheckUserRoleMixin):
                 return Response({"error": "Un dossier existe déjà pour ce patient."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Génération du QR code
-            qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
-            qr_image = qrcode.make(qr_data)
+            qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+            qr_image = qrcode.make(qr_data_str)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
-            qr_base64 = base64.b64encode(buffer.getvalue()).decode()  # Encodage en base64
+            
+            buffer.seek(0)
+
+            # Création du fichier image pour l'ImageField
+            qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
             buffer.close()
 
             # Création du dossier patient
-            dossier = DossierPatient.objects.create(patient=patient, qr=qr_base64)
+            dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
             serializer = DossierPatientSerializer(dossier)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -218,59 +232,23 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)    
         
 
-@login_required
-
-def create_dpi(request):
-    """
-    Vue pour créer un dossier DPI pour un patient.
-    """
-     # Vérifier les rôles de l'utilisateur avant de permettre la création du DPI
-    if not CheckUserRoleMixin().check_user_role(request.user, user_roles=['administratif'], technician_roles=['medecin']):
-        return JsonResponse({"error": "Vous n'avez pas la permission de créer ce dossier."}, status=403)
-
-
-    if request.method == "POST":
-        form = DossierPatientForm(request.POST)
-        if form.is_valid():
-            patient_id = form.cleaned_data['patient_id']
-           
-
-            try:
-                patient = Patient.objects.get(id=patient_id)
-                
-
-                # Vérifier si un dossier existe déjà pour ce patient
-                if DossierPatient.objects.filter(patient=patient).exists():
-                    return JsonResponse({"error": "Un dossier existe déjà pour ce patient."}, status=400)
-
-                # Créer le dossier DPI
-                dossier = DossierPatient.objects.create(patient=patient)
-
-                # Retourner un message de succès
-                return JsonResponse({"success": "DPI créé avec succès."}, status=201)
-            except Patient.DoesNotExist:
-                return JsonResponse({"error": "Patient introuvable."}, status=404)
-            
-        else:
-            return JsonResponse({"error": "Formulaire invalide."}, status=400)
-    else:
-        form = DossierPatientForm()
-
-    return render(request, "create_dpi.html", {'form': form})        
-
-
 
 
 ## retrun patitn object by id 
 
 
+@login_required
 def search_patient_by_dossier(request, dossier_id):
+    
     # Try to retrieve the dossier and associated patient
     dossier = get_object_or_404(DossierPatient, id=dossier_id)
     patient = dossier.patient
 
+    # Construire l'URL absolue pour le QR code
+    qr_url = request.build_absolute_uri(dossier.qr.url) if dossier.qr else None
     # Return patient details in JSON format
     response_data = {
+        'qr': qr_url,
         'id': patient.id,
         'nom': patient.nom,
         'prenom': patient.prenom,
@@ -286,49 +264,6 @@ def search_patient_by_dossier(request, dossier_id):
 
 
 
-
-
-
-"""
-class PatientRegistrationView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        serializer = PatientRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            # Create the User object
-            user = User.objects.create_user(
-                email=serializer.validated_data['email'],
-                password=serializer.validated_data['password'],
-                role='patient'
-            )
-
-            # Create the Patient object linked to the User
-            patient_data = {
-                'user': user,
-                'nom': serializer.validated_data['nom'],
-                'prenom': serializer.validated_data['prenom'],
-                'date_naissance': serializer.validated_data['date_naissance'],
-                'adresse': serializer.validated_data['adresse'],
-                'tel': serializer.validated_data['tel'],
-                'mutuelle': serializer.validated_data['mutuelle'],
-                'medecin_traitant': serializer.validated_data['medecin_traitant'],
-                'personne_a_contacter': serializer.validated_data['personne_a_contacter'],
-                'nss': serializer.validated_data['nss']
-            }
-            patient = Patient.objects.create(**patient_data)
-
-            # Create the DossierPatient object linked to the Patient
-            DossierPatient.objects.create(patient=patient)
-
-            # Return success response
-            return Response({'message': 'Patient registered successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
-            """
-from rest_framework.decorators import action
-
-from django.contrib.auth import get_user_model
 
 
 class creatuserPatientView(APIView, CheckUserRoleMixin):
@@ -347,6 +282,8 @@ class creatuserPatientView(APIView, CheckUserRoleMixin):
 
         if serializer.is_valid():
             email = serializer.validated_data['email']
+            
+
 
             # Get the custom User model
             User = get_user_model() 
@@ -379,10 +316,10 @@ class creatuserPatientView(APIView, CheckUserRoleMixin):
             patient = Patient.objects.create(**patient_data)
 
             # Génération du QR code
-            qr_data = f"Patient: {patient.nom}, ID: {patient.id}"  # Ajoutez les infos nécessaires
-            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
 
-            qr_image = qrcode.make(qr_data)
+            qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+            qr_image = qrcode.make(qr_data_str)
             buffer = io.BytesIO()
             qr_image.save(buffer, format="PNG")
             
@@ -400,3 +337,94 @@ class creatuserPatientView(APIView, CheckUserRoleMixin):
         else : 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+
+
+
+###################################### test fonctionel ###################################################
+from rest_framework import serializers
+from django.contrib import messages
+
+def create_dpi(request):
+    if request.method == 'POST':
+        form = DossierPatientForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+
+            nom = form.cleaned_data['nom']
+            prenom = form.cleaned_data['prenom']
+            adresse = form.cleaned_data['adresse']
+            date_naissance = form.cleaned_data['date_naissance']
+            tel = form.cleaned_data['tel']
+            mutuelle = form.cleaned_data['mutuelle']
+            medecin_traitant_email = form.cleaned_data['medecin_traitant_email']
+            personne_a_contacter = form.cleaned_data['personne_a_contacter']
+            nss = form.cleaned_data['nss']
+            
+
+
+            
+
+            #creation du cmpte 
+            User = get_user_model()
+            user=User.objects.create_user(email=email, password=password,role="patient")
+
+
+            #creer patient
+        try:
+            technicien_user = User.objects.get(email=medecin_traitant_email)
+            medecin_traitant = technicien_user.technician  # Access the Technician instance related to the User
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"No technician found with email {medecin_traitant_email}")
+        except Technician.DoesNotExist:
+            raise serializers.ValidationError(f"The user with email {medecin_traitant_email} is not a technician")
+
+
+        patient = Patient.objects.create(
+                nom=nom,
+                prenom=prenom,
+                adresse=adresse,
+                date_naissance=date_naissance,
+                tel=tel,
+                mutuelle=mutuelle,
+                medecin_traitant=medecin_traitant,
+                personne_a_contacter=personne_a_contacter,
+                nss=nss,
+                user=user
+            )
+        
+
+        # Simuler la création du DPI
+        
+        # Génération du QR code
+        qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
+        qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
+        qr_image = qrcode.make(qr_data_str)
+        buffer = io.BytesIO()
+        qr_image.save(buffer, format="PNG")
+            
+        buffer.seek(0)
+
+            # Création du fichier image pour l'ImageField
+        qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
+        buffer.close()
+             
+        dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
+        
+       
+        # Ajout du message de succès
+        messages.success(request, 'Dossier patient créé avec succès !')
+
+        
+    else:
+        form = DossierPatientForm()
+
+    return render(request, 'dpi.html', {'form': form})
+
+
+            
+
+
+
+
+

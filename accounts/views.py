@@ -1,8 +1,10 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
 from .serializers import UserSerializer ,TechnicianSerializer , PatientSerializer , AdminSerializer ,AdminstratifSerializer
 from .models import User , Technician , Patient , Admin , Administratif , DossierPatient
+
 
 from datetime import timedelta
 from django.http import JsonResponse
@@ -97,8 +99,7 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
         user = self.get_user_from_request(request)
         role = user.role if user else None
 
-        response.data['nom'] = user.first_name
-        response.data['prenom'] = user.last_name
+        
         response.data['userID'] = user.id
 
 
@@ -109,8 +110,12 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
             try:
                 technician = Technician.objects.get(user=user)
                 response.data['technician_role'] = technician.role
+                response.data['technicien_id'] = technician.id
+                response.data['nom'] = technician.nom
+                response.data['prenom'] = technician.prenom
             except Technician.DoesNotExist:
                 response.data['technician_role'] = None 
+                response.data['technicien_id'] = None
 
 
 
@@ -118,11 +123,33 @@ class LoginView(TokenObtainPairView, CheckUserRoleMixin):
             try:
                 patient = Patient.objects.get(user=user)
                 dossier = DossierPatient.objects.get(patient=patient)
-                response.data['dossier_id'] = dossier.id  
+                response.data['dossier_id'] = dossier.id 
+                response.data['patient_id'] = patient.id 
+                response.data['nom'] = patient.nom
+                response.data['prenom'] = patient.prenom
             except Patient.DoesNotExist:
                 response.data['dossier_id'] = None  #
+                response.data['patient_id'] = None
             except DossierPatient.DoesNotExist:
                 response.data['dossier_id'] = None 
+
+        if role == 'admin':
+            try:
+                admin = Admin.objects.get(user=user)
+                response.data['admin_id'] = admin.id
+                response.data['nom'] = admin.nom
+                response.data['prenom'] = admin.prenom
+            except Admin.DoesNotExist:
+                response.data['admin_id'] = None
+
+        if role == 'administratif':
+            try:
+                administratif = Administratif.objects.get(user=user)
+                response.data['administratif_id'] = administratif.id
+                response.data['nom'] = administratif.nom
+                response.data['prenom'] = administratif.prenom
+            except Administratif.DoesNotExist:
+                response.data['administratif_id'] = None 
 
         # Set the refresh token as a cookie
         response.set_cookie(
@@ -363,7 +390,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
         }
     )
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = TechnicianSerializer(data=request.data)
@@ -385,7 +412,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
         }
     )
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['technicien']):
+        if not self.check_user_role(request.user,['technicien']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -410,7 +437,7 @@ class TechnicianView(APIView,CheckUserRoleMixin):
     )
 
     def delete(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -427,9 +454,36 @@ class TechnicianView(APIView,CheckUserRoleMixin):
 
 class AdministratifView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
-    
+
+    #create new administratif (post)
+    @swagger_auto_schema(
+        operation_summary="Create a new administratif",
+        operation_description="Allows users with the administrator role to create a new administratif by providing the necessary details.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Last name of the administratif user"),
+                "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Firest name of the administratif user"),
+                "user": openapi.Schema(type=openapi.TYPE_STRING, description="id of the user in User table administratif user"),
+            },
+            required=["nom", "prenom", "user"],
+        ),
+        responses={
+            201: openapi.Response("Created", openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the created administratif"),
+                    "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Email of the administratif"),
+                    "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
+                    "user": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
+                }
+            )),
+            400: "Bad Request",
+            403: "Forbidden",
+        }
+    )
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['admin']):
+        if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         """
@@ -441,9 +495,34 @@ class AdministratifView(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-     # Update an existing administratif (PUT)
+    # Update an existing administratif (PUT)
+    @swagger_auto_schema(
+        operation_summary="Update an existing administratif",
+        operation_description="Allows users with the administratif role to update their details by providing the administratif ID and updated data.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name of the administratif user"),
+                "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email of the administratif user"),
+            },
+        ),
+        responses={
+            200: openapi.Response("OK", openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the administratif"),
+                    "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name"),
+                    "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email"),
+                }
+            )),
+            400: "Bad Request",
+            403: "Forbidden",
+            404: "Not Found",
+        }
+    )
+     
     def put(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif']):
+        if not self.check_user_role(request.user,['administratif']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -458,6 +537,15 @@ class AdministratifView(APIView,CheckUserRoleMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete an administratif (DELETE)
+    @swagger_auto_schema(
+        operation_summary="Delete an administratif",
+        operation_description="Allows users with the administratif role to delete an administratif by providing its ID.",
+        responses={
+            200: "Administratif deleted successfully.",
+            403: "Forbidden",
+            404: "Not Found",
+        }
+    )
     def delete(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['administratif']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -597,6 +685,7 @@ class AdminView(APIView,CheckUserRoleMixin):
 
 
 class TechnicianSearchByRoleView(APIView):
+    permission_classes=[IsAuthenticated]
     """
     API endpoint to search for technicians by role.
     """
@@ -658,6 +747,7 @@ class TechnicianSearchByRoleView(APIView):
             ),
         }
     )
+    
     def get(self, request, *args, **kwargs):
         # Get 'role' from query parameters
         role = request.GET.get('role', None)
@@ -690,7 +780,7 @@ class TechnicianSearchByIDView(APIView):
     """
     API endpoint to search for a technician by ID.
     """
-
+    permission_classes=[IsAuthenticated]
     @swagger_auto_schema(
         operation_description="Search for a technician by their unique ID.",
         manual_parameters=[
@@ -748,19 +838,54 @@ class TechnicianSearchByIDView(APIView):
         # Case when 'id' is not provided
         if not id:
             return Response({"details": "ID is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
             # Search for the technician with the provided ID
             technician = Technician.objects.get(id=id)
 
             # Serialize the technician object
-            technician_ser = TechnicianSerializer(technician)
-
-            # Return the technician object in the response
+            technician_ser = TechnicianSerializer(technician)   
+             # Return the technician object in the response
             return Response(technician_ser.data)
         except Technician.DoesNotExist:
             return Response({"details": "No technician found with this id"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        
+
+ 
+
  ## accounts : 
+
+ 
+ # test fonctionel
+from django.contrib.auth import authenticate, login
+from django.http import JsonResponse
+from django.shortcuts import render,redirect, get_object_or_404
+from rest_framework import serializers
+from  .forms import LoginForm
+
+def login_view(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=email, password=password)
+            
+            login(request, user)
+            return JsonResponse({"status": "success", "message": "Login successful"})
+           
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
+
+
+           
+
+
+
+
+
+
+

@@ -34,7 +34,6 @@ class PatientSerializer(serializers.ModelSerializer):
         # 'user' field is not included, so it will not appear in the serialized response
 
 
-
 class PatientRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -68,5 +67,4 @@ class UserPatientSerializer (serializers.ModelSerializer) :
             'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
             'password', 'personne_a_contacter', 'nss', 'email' , 'medecin_traitant'
         ]  
-
 

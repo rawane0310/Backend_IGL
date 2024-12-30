@@ -3,8 +3,8 @@ from .views import TechnicianSearchByRoleView , TechnicianSearchByIDView
 
 from django.urls import path
 from .views import UserView , TechnicianView , PatientView , AdminView ,AdministratifView
-from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView
-
+from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView, login_view
+from . import views
  
 
 urlpatterns = [
@@ -32,6 +32,8 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
 
-    
 
+    #pour test fonctionel
+    path('loginTest/', login_view, name='loginTest'),
+    
 ]

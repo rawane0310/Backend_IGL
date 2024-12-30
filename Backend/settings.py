@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_simplejwt.token_blacklist',
     'versatileimagefield',
-    'reviews',
+    
     'debug_toolbar',
     'drf_yasg', 
 ]
@@ -96,14 +96,21 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  
-        'NAME': 'kraaaht',  
-        'USER': 'Rofieda',
-        'PASSWORD': '@MaaMar@14@LD@AND@IMS@HM@',  
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dpi1',
+        'USER': 'root',
+        'PASSWORD': 'Livitachi1010#',
         'HOST': 'localhost',  
-        'PORT': '3306',  
+        'PORT': '3306',   
     }
 }
+
+
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 
 

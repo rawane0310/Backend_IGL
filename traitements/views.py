@@ -16,7 +16,7 @@ class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user,['infermier']):
+        if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = SoinInfermierSerializer(data=request.data)
@@ -52,7 +52,7 @@ class MedicamentCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user,['infermier','medecin']):
+        if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
@@ -101,7 +101,7 @@ class MedicamentCreateView(APIView,CheckUserRoleMixin):
 class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, medicament_id):
-        if not self.check_user_role(request.user,['infermier','medecin']):
+        if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -124,7 +124,7 @@ class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
 class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def delete(self, request, soin_id):
-        if not self.check_user_role(request.user,['infermier']):
+        if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -148,19 +148,19 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, soin_id):
-        if not self.check_user_role(request.user,['infermier']):
+        if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_soin(request, soin_id, partial=False)
 
     def patch(self, request, soin_id):
-        if not self.check_user_role(request.user,['infermier']):
+        if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_soin(request, soin_id, partial=True)
 
     def update_soin(self, request, soin_id, partial):
-        if not self.check_user_role(request.user,['infermier']):
+        if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -185,7 +185,7 @@ class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, medicament_id):
-        if not self.check_user_role(request.user,['infermier','medecin']):
+        if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         return self.update_medicament(request, medicament_id, partial=False)
@@ -293,6 +293,19 @@ class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
         if dossier_id:
             soins = soins.filter(dossier_id=dossier_id)
         
-        # Préparer la réponse au format JSON
-        resultats = list(soins.values())
+        # Préparer les données pour inclure nom et prénom de l'infirmier
+        resultats = []
+        for soin in soins:
+            resultats.append({
+                'id': soin.id,
+                'date': soin.date,
+                'heure': soin.heure,
+                'observation': soin.observation,
+                'soin_realise': soin.soin_realise,
+                'dossier_id': soin.dossier_id,
+                'infirmier_id': soin.infirmier_id,
+                'infirmier_nom': soin.infirmier.nom if soin.infirmier else None,
+                'infirmier_prenom': soin.infirmier.prenom if soin.infirmier else None,
+            })
+
         return Response(resultats)
