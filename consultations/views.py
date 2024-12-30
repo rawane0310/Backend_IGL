@@ -183,18 +183,7 @@ class ModifierOrdonnanceAPIV(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user,technician_roles=['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        return self.update_ordonnance(request, ordonnance_id, partial=False)
-
-    def patch(self, request, ordonnance_id):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_ordonnance(request, ordonnance_id, partial=True)
-
-    def update_ordonnance(self, request, ordonnance_id, partial):
-        if not self.check_user_role(request.user, ['technicien'],['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             ordonnance = Ordonnance.objects.get(id=ordonnance_id)
         except Ordonnance.DoesNotExist:
@@ -203,7 +192,7 @@ class ModifierOrdonnanceAPIV(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = OrdonnanceSerializer(ordonnance, data=request.data, partial=partial)
+        serializer = OrdonnanceSerializer(ordonnance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -217,20 +206,9 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
 
     def put(self, request, consultation_id):
         if not self.check_user_role(request.user,technician_roles=['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
  
-        return self.update_consultation(request, consultation_id, partial=False)
-
-    def patch(self, request, consultation_id):
-        if not self.check_user_role(request.user,['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_consultation(request, consultation_id, partial=True)
-
-    def update_consultation(self, request, consultation_id, partial):
-        if not self.check_user_role(request.user,['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             consultation = Consultation.objects.get(id=consultation_id)
         except Consultation.DoesNotExist:
@@ -239,7 +217,7 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = ConsultationSerializer(consultation, data=request.data, partial=partial)
+        serializer = ConsultationSerializer(consultation, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -250,7 +228,7 @@ class ModifierConsultationAPIV(APIView,CheckUserRoleMixin):
  
 
 
-class ConsultationSearchByDateView(APIView) : 
+class ConsultationSearchByDateView(APIView,CheckUserRoleMixin) : 
     permission_classes=[IsAuthenticated]
     def get( self , request , *args ,**kwargs ) : 
         if not self.check_user_role(request.user,['patient'],['medecin']):
@@ -276,7 +254,7 @@ class ConsultationSearchByDateView(APIView) :
 ###########################################################################################################################################
 
 
-class ConsultationSearchByDpiView (APIView ) : 
+class ConsultationSearchByDpiView (APIView,CheckUserRoleMixin ) : 
     permission_classes=[IsAuthenticated]
     def get (self , request , *args , **kwargs ) : 
         if not self.check_user_role(request.user,['patient'],['medecin']):
@@ -301,7 +279,7 @@ class ConsultationSearchByDpiView (APIView ) :
 ###########################################################################################################################################
 
 
-class ConsultationSearchByTechnicienView (APIView) : 
+class ConsultationSearchByTechnicienView (APIView,CheckUserRoleMixin) : 
     permission_classes=[IsAuthenticated]
     def get (self , request , *args , **kwargs ) : 
         if not self.check_user_role(request.user,['patient'],['medecin']):
@@ -333,18 +311,7 @@ class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user,technician_roles=['medecin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        return self.update_resume(request, resume_id, partial=False)
-
-    def patch(self, request, resume_id):
-        if not self.check_user_role(request.user,technician_roles=['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_resume(request, resume_id, partial=True)
-
-    def update_resume(self, request, resume_id, partial):
-        if not self.check_user_role(request.user,technician_roles=['medecin']):
-            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             resume = Resume.objects.get(id=resume_id)
         except Resume.DoesNotExist:
@@ -353,7 +320,7 @@ class ModifierResumeAPIV(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = ResumerSerializer(resume, data=request.data, partial=partial)
+        serializer = ResumerSerializer(resume, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
