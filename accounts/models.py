@@ -132,8 +132,9 @@ class Ordonnance(models.Model):
 class DossierPatient(models.Model):
     
     patient = models.OneToOneField(Patient, on_delete=models.CASCADE, related_name='dossier')
-    qr = models.TextField()  # QR 
+    qr = models.ImageField(upload_to='qr_code/',blank=True, null=True)  # QR 
 
+    
 # SoinInfermier model
 class SoinInfermier(models.Model):
     date = models.DateField()
