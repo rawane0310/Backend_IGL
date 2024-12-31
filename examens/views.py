@@ -442,7 +442,7 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 ###########################################################################################################################################
 
 
-class GraphiquePatientView(APIView):
+class GraphiquePatientView(APIView, CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_examen):
