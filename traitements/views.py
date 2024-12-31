@@ -103,10 +103,7 @@ class MedicamentCreateView(APIView,CheckUserRoleMixin):
     @swagger_auto_schema(
         operation_summary="Create a new Medicament",
         operation_description="This endpoint allows authenticated nurses or doctors to create a new medicament associated with either an ordonnance (prescription) or a soin infirmier (nursing care). Both fields cannot be provided simultaneously.",
-        manual_parameters=[
-            openapi.Parameter('ordonnance', openapi.IN_BODY, description="ID of the ordonnance (prescription) associated with the medicament.", type=openapi.TYPE_INTEGER),
-            openapi.Parameter('soin', openapi.IN_BODY, description="ID of the soin infirmier (nursing care) associated with the medicament.", type=openapi.TYPE_INTEGER),
-        ],
+        
         request_body=MedicamentSerializer,
         responses={
             201: openapi.Response(
@@ -230,7 +227,7 @@ class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
                 }
             ),
         }
-    )
+    )    
 
     def delete(self, request, medicament_id):
         if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
@@ -374,6 +371,7 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
             ),
         }
     )
+
 
     def put(self, request, soin_id):
         if not self.check_user_role(request.user,technician_roles=['infermier']):

@@ -186,7 +186,7 @@ class LogoutAPIView(APIView, CheckUserRoleMixin):
     """
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutUserSerializer
-
+    
     @swagger_auto_schema(
         operation_description="Logs out the user by blacklisting the refresh token. "
                               "The access token should be included in the Authorization header as a Bearer token.",
@@ -203,6 +203,8 @@ class LogoutAPIView(APIView, CheckUserRoleMixin):
         ),
         security=[{'Bearer': []}],  # Indicating the use of Bearer token for authentication
     )
+    
+
     def post(self, request, *args, **kwargs):
         """
         Logs out the user by invalidating the provided refresh token.
