@@ -344,11 +344,11 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
  
 
 class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        #if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
-         #   return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         id = request.GET.get('id',None)
         technicien = request.GET.get('technicien', None)
@@ -371,7 +371,7 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
             if compte_rendu:
                 examens_radio = examens_radio.filter(compte_rendu__icontains=compte_rendu)       
             if dossier:
-                examens_radio = examens_radio.filter(dossier__icontains=dossier)
+                examens_radio = examens_radio.filter(dossier_patient__id=dossier)
             if description:
                 examens_radio = examens_radio.filter(description__icontains=description)
 
