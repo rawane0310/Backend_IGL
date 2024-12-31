@@ -442,14 +442,14 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 ###########################################################################################################################################
 
 
-class GraphiquePatientView(APIView):
+class GraphiquePatientView(APIView, CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, id_examen):
+    def get(self, request, pk):
         if not self.check_user_role(request.user, technician_roles=['laborantin', 'medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        examen_actuel = ExamenBiologique.objects.filter(id=id_examen).first()
+        examen_actuel = ExamenBiologique.objects.filter(id=pk).first()
 
         if not examen_actuel:
             return Response({"detail": "Examen non trouvé"}, status=status.HTTP_404_NOT_FOUND)
