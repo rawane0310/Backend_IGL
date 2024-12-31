@@ -8,7 +8,7 @@ from . import views
  
 
 urlpatterns = [
-   #path('users/', UserView.as_view()),  # pour la creation (user)
+   path('users/', UserView.as_view()),  # pour la creation (user)
     path('users/<int:pk>/', UserView.as_view()),  # pour put et delete (user)
 
     path('technicians/', TechnicianView.as_view()),  # For POST (creation)

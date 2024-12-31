@@ -27,5 +27,5 @@ urlpatterns = [
     path('search-examens-radiologiques/', SearchExamenRadiologiqueView.as_view(), name='search_examens_radiologiques'), #recherche
     path('search-resultat-biologique/', SearchResultatBiologiqueByIdView.as_view(), name='search_resultat_biologique'), #recherche
 
-    path('graphique-patient/', GraphiquePatientView.as_view(), name='graphique-patient'), #graphe
+    path('graphique-patient/<int:pk>/', GraphiquePatientView.as_view(), name='graphique-patient'), #graphe , id_examen
 ]

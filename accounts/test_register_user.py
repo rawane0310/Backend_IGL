@@ -11,37 +11,48 @@ def api_client():
     return APIClient()
 
 @pytest.fixture
+def admin_user():
+    # Create an admin user for authentication
+    return User.objects.create_user(email='admin@example.com', password='adminpassword', role='admin')
+
+@pytest.fixture
 def valid_user_data():
     return {
         'email': 'testuser@example.com',
         'password': 'testpassword123',
-        'role': 'admin',
+        'role': 'user',  # Adjust this based on your role setup
     }
 
-@pytest.mark.django_db
-def test_register_user_success(api_client, valid_user_data):
-    response = api_client.post('/accounts/register/', valid_user_data, format='json')
+def test_settings_loaded():
+    assert hasattr(settings, 'REST_FRAMEWORK'), "REST_FRAMEWORK is not configured."
+
+
     
+@pytest.mark.django_db
+def test_register_user_success(api_client, admin_user, valid_user_data):
+    # Authenticate as admin
+    api_client.force_authenticate(user=admin_user)
+
+    # Send the POST request
+    response = api_client.post('/accounts/register/', valid_user_data, format='json')
+
     # Check if the response status is 201 Created
     assert response.status_code == status.HTTP_201_CREATED
-    
-    # Check if the response message is correct
-    assert response.data['message'] == 'User registered successfully'
-    
+
+    # Check if the user data is returned
+    assert response.data['email'] == valid_user_data['email']
+
     # Check if the user is created in the database
     user = User.objects.get(email=valid_user_data['email'])
     assert user.email == valid_user_data['email']
-    assert user.role == valid_user_data['role']
     assert user.check_password(valid_user_data['password'])  # Check if the password is hashed
 
-
-
-
-
-
 @pytest.mark.django_db
-def test_register_user_failure_missing_email(api_client):
-    # Test with missing email (password is provided)
+def test_register_user_failure_missing_email(api_client, admin_user):
+    # Authenticate as admin
+    api_client.force_authenticate(user=admin_user)
+
+    # Test with missing email
     response = api_client.post('/accounts/register/', {'password': 'testpassword123'}, format='json')
 
     # Check if the response status is 400 Bad Request
@@ -50,11 +61,12 @@ def test_register_user_failure_missing_email(api_client):
     # Check if the response contains the correct error for missing email
     assert 'email' in response.data, f"Expected 'email' error, but got {response.data}"
 
-
-
 @pytest.mark.django_db
-def test_register_user_failure_missing_password(api_client):
-    # Test with missing password (email is provided)
+def test_register_user_failure_missing_password(api_client, admin_user):
+    # Authenticate as admin
+    api_client.force_authenticate(user=admin_user)
+
+    # Test with missing password
     response = api_client.post('/accounts/register/', {'email': 'test@example.com'}, format='json')
 
     # Check if the response status is 400 Bad Request

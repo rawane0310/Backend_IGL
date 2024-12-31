@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from accounts.models import DossierPatient, Patient , Technician
 from .serializers import DossierPatientSerializer , PatientSerializer, UserPatientSerializer
+
 import qrcode
 import io
 import json
@@ -27,6 +28,17 @@ from django.http import JsonResponse
 from .forms import DossierPatientForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from .serializers import PatientRegistrationSerializer
+from django.views.decorators.csrf import csrf_protect
+from django.core.files.base import ContentFile
+
+
+
+from rest_framework.decorators import action
+
+from django.contrib.auth import get_user_model
+import json
+
 
 
 class SupprimerDpiAPIView(APIView,CheckUserRoleMixin):
@@ -261,6 +273,8 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
 
 
 ## retrun patitn object by id 
+
+
 @login_required
 def search_patient_by_dossier(request, dossier_id):
     
@@ -284,27 +298,40 @@ def search_patient_by_dossier(request, dossier_id):
         'personne_a_contacter': patient.personne_a_contacter,
         'nss': patient.nss,
     }
-    return JsonResponse(response_data)
-
-from rest_framework.decorators import action
-
-from django.contrib.auth import get_user_model
+    return JsonResponse(response_data) 
 
 
-class creatuserPatientView(APIView,CheckUserRoleMixin):
-    #permission_classes=[IsAuthenticated]
+
+
+
+class creatuserPatientView(APIView, CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+
+
     @action(methods=['POST'], detail=False)
     def post(self, request):
-        #if not self.check_user_role(request.user,['administratif'],['medecin']):
-            #return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_user_role(request.user, user_roles=['administratif'], technician_roles=['medecin']):
+            return Response(
+                {'error': 'You do not have permission to create a patient user.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = UserPatientSerializer(data=request.data)
+
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
+            
+
 
             # Get the custom User model
             User = get_user_model() 
+
+            if User.objects.filter(email=email).exists() : 
+                return Response( 
+                    {'error' : f"a user with this email {email} already exist "} , status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            password = serializer.validated_data['password']
 
             user = User.objects.create_user(
                 email=email, 
@@ -327,6 +354,7 @@ class creatuserPatientView(APIView,CheckUserRoleMixin):
             patient = Patient.objects.create(**patient_data)
 
             # Génération du QR code
+
             qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
             qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
             qr_image = qrcode.make(qr_data_str)
