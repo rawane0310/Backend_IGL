@@ -56,7 +56,7 @@ def test_create_dpi():
         driver.find_element(By.NAME, "adresse").send_keys("123 rue de Paris")
         driver.find_element(By.NAME, "tel").send_keys("000479")
         driver.find_element(By.NAME, "mutuelle").send_keys("sante")
-        driver.find_element(By.NAME, "medecin_traitant_email").send_keys("medecin5@gmail.com")
+        driver.find_element(By.NAME, "medecin_traitant").send_keys(1)
         driver.find_element(By.NAME, "personne_a_contacter").send_keys("0577984641")
         driver.find_element(By.NAME, "nss").send_keys("9746315")
 

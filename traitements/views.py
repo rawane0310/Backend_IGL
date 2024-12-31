@@ -10,10 +10,59 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from accounts.mixin import CheckUserRoleMixin
 
-
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Create a nursing care record (Soin Infirmier)",
+        operation_description="This endpoint allows nurses to create a nursing care record by providing necessary details.",
+        
+        request_body=SoinInfermierSerializer,
+        responses={
+            201: openapi.Response(
+                description="Nursing care record created successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "infirmier": 1,
+                        "heure": "15:00",
+                        "observation": "Patient in good condition.",
+                        "soin_realise": "Administered medication.",
+                        "dossier": 12
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "date": ["This field is required."],
+                        "soin_realise": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Not found error, either the patient file or nurse is not found.",
+                examples={
+                    "application/json": {
+                        "error": "The specified patient file does not exist."
+                    }
+                }
+            ),
+        }
+    )
 
     def post(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,technician_roles=['infermier']):
@@ -50,6 +99,45 @@ class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
 
 class MedicamentCreateView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Create a new Medicament",
+        operation_description="This endpoint allows authenticated nurses or doctors to create a new medicament associated with either an ordonnance (prescription) or a soin infirmier (nursing care). Both fields cannot be provided simultaneously.",
+        
+        request_body=MedicamentSerializer,
+        responses={
+            201: openapi.Response(
+                description="Medicament created successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "nom": "Paracetamol",
+                        "dose": "500mg",
+                        "frequence": "Once a day",
+                        "duree": "7 days",
+                        "ordonnance": 1,
+                        "soin": None,
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "error": "You must provide either an ordonnance or a soin infirmier, not both."
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create this resource."
+                    }
+                }
+            ),
+        }
+    )
 
     def post(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
@@ -100,6 +188,47 @@ class MedicamentCreateView(APIView,CheckUserRoleMixin):
 
 class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Delete a medicament",
+        operation_description="This endpoint allows authorized users ('infermier' or 'medecin') to delete a medicament by its unique ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                'medicament_id', 
+                openapi.IN_PATH, 
+                description="ID of the medicament to be deleted", 
+                type=openapi.TYPE_INTEGER, 
+                required=True
+            ),
+        ],
+        responses={
+            204: openapi.Response(
+                description="Medicament successfully deleted.",
+                examples={
+                    "application/json": {
+                        "message": "Medicament deleted successfully."
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Forbidden. User does not have permission to delete the resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Medicament not found.",
+                examples={
+                    "application/json": {
+                        "error": "Medicament not found."
+                    }
+                }
+            ),
+        }
+    )    
+
     def delete(self, request, medicament_id):
         if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -123,6 +252,47 @@ class SupprimerMedicamentAPIView(APIView,CheckUserRoleMixin):
 
 class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Delete a care record",
+        operation_description="This endpoint allows a nurse to delete a care record by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                'soin_id',
+                openapi.IN_PATH,
+                description="The ID of the care record to delete.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ],
+        responses={
+            204: openapi.Response(
+                description="Successfully deleted the care record.",
+                examples={
+                    "application/json": {
+                        "message": "Soin supprimée avec succès."
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to delete this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Care record not found.",
+                examples={
+                    "application/json": {
+                        "error": "Soin introuvable."
+                    }
+                }
+            ),
+        }
+    )
+
     def delete(self, request, soin_id):
         if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -147,22 +317,67 @@ class SupprimerSoinAPIView(APIView,CheckUserRoleMixin):
 class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Update a nursing care record",
+        operation_description="This endpoint allows a nurse to modify an existing nursing care record. Only authorized nurses can modify the record.",
+        manual_parameters=[
+            openapi.Parameter(
+                'soin_id', 
+                openapi.IN_PATH, 
+                description="The ID of the nursing care record (soin infirmier) to update.", 
+                type=openapi.TYPE_INTEGER, 
+                required=True
+            )
+        ],
+        request_body=SoinInfermierSerializer,
+        responses={
+            200: openapi.Response(
+                description="Successfully updated the nursing care record.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "infirmier": 2,
+                        "heure": "15:00",
+                        "observation": "Patient showing improvement.",
+                        "soin_realise": "Wound dressing.",
+                        "dossier": 1
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "observation": ["This field may not be blank."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Permission denied. You do not have the required role to update this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Nursing care record not found.",
+                examples={
+                    "application/json": {
+                        "error": "Soin infirmier introuvable."
+                    }
+                }
+            ),
+        }
+    )
+
+
     def put(self, request, soin_id):
         if not self.check_user_role(request.user,technician_roles=['infermier']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        return self.update_soin(request, soin_id, partial=False)
-
-    def patch(self, request, soin_id):
-        if not self.check_user_role(request.user,technician_roles=['infermier']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_soin(request, soin_id, partial=True)
-
-    def update_soin(self, request, soin_id, partial):
-        if not self.check_user_role(request.user,technician_roles=['infermier']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             soin = SoinInfermier.objects.get(id=soin_id)
         except SoinInfermier.DoesNotExist:
@@ -171,7 +386,7 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = SoinInfermierSerializer(soin, data=request.data, partial=partial)
+        serializer = SoinInfermierSerializer(soin, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -184,22 +399,66 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
 class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Modify an existing medication",
+        operation_description="This endpoint allows authorized users (infermier , medecin) to update the details of an existing medication by providing the medication ID and the data to be updated.",
+        manual_parameters=[
+            openapi.Parameter(
+                'medicament_id', 
+                openapi.IN_PATH, 
+                description="The ID of the medication to be updated.", 
+                type=openapi.TYPE_INTEGER, 
+                required=True
+            ),
+        ],
+        request_body=MedicamentSerializer,
+        responses={
+            200: openapi.Response(
+                description="Medication successfully updated.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "nom": "Paracetamol",
+                        "dose": "500mg",
+                        "frequence": "Every 6 hours",
+                        "duree": "5 days",
+                        "ordonnance": 2,
+                        "soin": None
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "dose": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to modify this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="The specified medication was not found.",
+                examples={
+                    "application/json": {
+                        "error": "medicament introuvable."
+                    }
+                }
+            ),
+        }
+    )
+
     def put(self, request, medicament_id):
         if not self.check_user_role(request.user,technician_roles=['infermier','medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        return self.update_medicament(request, medicament_id, partial=False)
-
-    def patch(self, request, medicament_id):
-        if not self.check_user_role(request.user,['infermier','medecin']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_medicament(request, medicament_id, partial=True)
-
-    def update_medicament(self, request, medicament_id, partial):
-        if not self.check_user_role(request.user,['infermier','medecin']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             medicament = Medicament.objects.get(id=medicament_id)
         except Medicament.DoesNotExist:
@@ -208,7 +467,7 @@ class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = MedicamentSerializer(medicament, data=request.data, partial=partial)
+        serializer = MedicamentSerializer(medicament, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -220,6 +479,56 @@ class ModifierMedicamentAPIView(APIView,CheckUserRoleMixin):
 
 class RechercheMedicamentAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Search for medications",
+        operation_description="This endpoint allows patients, or nursers, or doctors to search for medications using various filters. It can filter by medication ID, name, dose, frequency, duration, prescription ID, and care ID.",
+        manual_parameters=[
+            openapi.Parameter('id', openapi.IN_QUERY, description="Filter by medication ID.", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('nom', openapi.IN_QUERY, description="Filter by medication name (partial match).", type=openapi.TYPE_STRING),
+            openapi.Parameter('dose', openapi.IN_QUERY, description="Filter by medication dose (partial match).", type=openapi.TYPE_STRING),
+            openapi.Parameter('frequence', openapi.IN_QUERY, description="Filter by medication frequency (partial match).", type=openapi.TYPE_STRING),
+            openapi.Parameter('duree', openapi.IN_QUERY, description="Filter by medication duration (partial match).", type=openapi.TYPE_STRING),
+            openapi.Parameter('ordonnance', openapi.IN_QUERY, description="Filter by prescription ID.", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('soin', openapi.IN_QUERY, description="Filter by care ID.", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of medications matching the search criteria.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "nom": "Paracetamol",
+                            "dose": "500mg",
+                            "frequence": "3 times a day",
+                            "duree": "7 days",
+                            "ordonnance_id": 1,
+                            "soin_id": None
+                        },
+                        {
+                            "id": 2,
+                            "nom": "Ibuprofen",
+                            "dose": "200mg",
+                            "frequence": "2 times a day",
+                            "duree": "5 days",
+                            "ordonnance_id": None,
+                            "soin_id": 3
+                        }
+                    ]
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to search for this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to search for this resource."
+                    }
+                }
+            )
+        }
+    )
+
     def get(self, request):
         if not self.check_user_role(request.user, ['patient'],['infermier','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -261,6 +570,49 @@ class RechercheMedicamentAPIView(APIView,CheckUserRoleMixin):
  
 class RechercheSoinInfermierAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Search for nursing care",
+        operation_description="This endpoint allows patients,nursers or doctors to search for nursing care records based on various filters, including ID, date, nurse, observation, and more.",
+        manual_parameters=[
+            openapi.Parameter('id', openapi.IN_QUERY, description="ID of the nursing care", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('date', openapi.IN_QUERY, description="Date of the nursing care (format: 'yyyy-mm-dd')", type=openapi.TYPE_STRING),
+            openapi.Parameter('infirmier', openapi.IN_QUERY, description="ID of the nurse", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('heure', openapi.IN_QUERY, description="Time of the nursing care", type=openapi.TYPE_STRING),
+            openapi.Parameter('observation', openapi.IN_QUERY, description="Text within the observation field", type=openapi.TYPE_STRING),
+            openapi.Parameter('soin_realise', openapi.IN_QUERY, description="Text within the performed care field", type=openapi.TYPE_STRING),
+            openapi.Parameter('dossier', openapi.IN_QUERY, description="Patient dossier ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successfully retrieved the nursing care records.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "date": "2024-12-31",
+                            "heure": "08:00",
+                            "observation": "Patient in stable condition",
+                            "soin_realise": "Administered medication",
+                            "dossier_id": 15,
+                            "infirmier_id": 11,
+                            "infirmier_nom": "John",
+                            "infirmier_prenom": "Doe"
+                        }
+                    ]
+                }
+            ),
+            403: openapi.Response(
+                description="Forbidden access. The user does not have the required permissions to search.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to search for this resource."
+                    }
+                }
+            ),
+        }
+    )
+
     def get(self, request):
         if not self.check_user_role(request.user, ['patient'],['infermier','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
