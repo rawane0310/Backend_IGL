@@ -445,11 +445,26 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 class GraphiquePatientView(APIView, CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, id_examen):
+    def generate_data_array(self,result, labels):
+        data = []
+        for label in labels:
+            parametre, unite = label.split(' (')
+            unite = unite[:-1]  # Remove the closing parenthesis
+
+            # Find matching result in combined_results
+            if result.parametre == parametre and result.unite == unite:
+                data.append(float(result.valeur))
+            else:
+                data.append(0)
+        
+        return data
+
+
+    def get(self, request, pk):
         if not self.check_user_role(request.user, technician_roles=['laborantin', 'medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        examen_actuel = ExamenBiologique.objects.filter(id=id_examen).first()
+        examen_actuel = ExamenBiologique.objects.filter(id=pk).first()
 
         if not examen_actuel:
             return Response({"detail": "Examen non trouvé"}, status=status.HTTP_404_NOT_FOUND)
@@ -465,22 +480,38 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
         if examen_precedent:
             resultats_precedent = ResultatExamen.objects.filter(examen_biologique=examen_precedent)
 
+        # Combine both arrays
+        combined_results = list(resultats_actuel) + list(resultats_precedent)
+
+        # Create labels and ensure no duplicates
+        labels = list(set([f"{result.parametre} ({result.unite})" for result in combined_results]))
+
+        data1 =[self.generate_data_array(result, labels) for result in resultats_actuel]
+        data2 = [self.generate_data_array(result, labels) for result in resultats_precedent]
+        
         data = {
-            "examen_actuel": {},
-            "examen_precedent": {}
+            "labels": labels,
+            "datasets": [
+                {
+                    "data": [sum(elements) for elements in zip(*data1)],
+                
+                },
+                {
+                    "data": [sum(elements) for elements in zip(*data2)],
+                }
+            ]
         }
 
-  
-        for resultat in resultats_actuel:
-            data["examen_actuel"][resultat.parametre] = {
-                "valeur": resultat.valeur,
-                "unite": resultat.unite
-            }
+        # for resultat in resultats_actuel:
+        #     data["examen_actuel"][resultat.parametre] = {
+        #         "valeur": resultat.valeur,
+        #         "unite": resultat.unite
+        #     }
 
-        for resultat in resultats_precedent:
-            data["examen_precedent"][resultat.parametre] = {
-                "valeur": resultat.valeur,
-                "unite": resultat.unite
-            }
+        # for resultat in resultats_precedent:
+        #     data["examen_precedent"][resultat.parametre] = {
+        #         "valeur": resultat.valeur,
+        #         "unite": resultat.unite
+        #     }
 
         return Response(data, status=status.HTTP_200_OK)
