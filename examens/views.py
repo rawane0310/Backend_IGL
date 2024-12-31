@@ -490,7 +490,7 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
         data2 = [self.generate_data_array(result, labels) for result in resultats_precedent]
         
         data = {
-            "labels:": labels,
+            "labels": labels,
             "datasets": [
                 {
                     "data": [sum(elements) for elements in zip(*data1)],
