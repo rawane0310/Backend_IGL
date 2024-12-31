@@ -29,47 +29,44 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 
 
-class DossierPatientCreateView(APIView,CheckUserRoleMixin):
-    #permission_classes = [IsAuthenticated]
-    
-    def post(self, request, *args, **kwargs):
-       # if not self.check_user_role(request.user, ['administratif'],['medecin']):
-            #return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            patient_id = request.data.get('patient')
-            patient = Patient.objects.get(id=patient_id)
-
-            # Vérifiez s'il existe déjà un dossier pour ce patient
-            if DossierPatient.objects.filter(patient=patient).exists():
-                return Response({"error": "Un dossier existe déjà pour ce patient."}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Génération du QR code
-            qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
-            qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
-            qr_image = qrcode.make(qr_data_str)
-            buffer = io.BytesIO()
-            qr_image.save(buffer, format="PNG")
-            
-            buffer.seek(0)
-
-            # Création du fichier image pour l'ImageField
-            qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
-            buffer.close()
-
-            # Création du dossier patient
-            dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
-            serializer = DossierPatientSerializer(dossier)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        except Patient.DoesNotExist:
-            return Response({"error": "Patient introuvable."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-###########################################################################################################################################
 class SupprimerDpiAPIView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Delete a patient's file (Dossier Patient)",
+        operation_description="This endpoint allows authorized users (administratif or medecin) to delete a patient file (Dossier Patient) by its ID.",
+        manual_parameters=[
+            openapi.Parameter(
+                'dpi_id', 
+                openapi.IN_PATH, 
+                description="The ID of the patient's file (Dossier Patient) to be deleted.", 
+                type=openapi.TYPE_INTEGER, 
+                required=True
+            ),
+        ],
+        responses={
+            204: openapi.Response(
+                description="Patient file deleted successfully."
+            ),
+            403: openapi.Response(
+                description="Forbidden. The user does not have permission to delete this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Patient file not found.",
+                examples={
+                    "application/json": {
+                        "error": "dpi introuvable."  
+                    }
+                }
+            ),
+        }
+    )
+
     def delete(self, request, dpi_id):
         if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -94,22 +91,63 @@ class SupprimerDpiAPIView(APIView,CheckUserRoleMixin):
 class ModifierDossierAPIView(APIView,CheckUserRoleMixin):
     
     permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Update a patient file (DossierPatient)",
+        operation_description="This endpoint allows users with the `administratif` or `medecin` role to modify a patient's file (DossierPatient). The `dpi_id` is required to identify the record to be updated.",
+        manual_parameters=[
+            openapi.Parameter(
+                'dpi_id', 
+                openapi.IN_PATH,
+                description="The unique identifier of the patient file (DossierPatient) to be updated.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            ),
+        ],
+        request_body=DossierPatientSerializer,
+        responses={
+            200: openapi.Response(
+                description="Patient file updated successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "patient": 1,
+                        "qr": "media/qr_code/qr_patient_33.png"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided for updating the dossier.",
+                examples={
+                    "application/json": {
+                        "patient": ["This field is integer."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to modify this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="DossierPatient not found for the given `dpi_id`.",
+                examples={
+                    "application/json": {
+                        "error": "dpi introuvable."
+                    }
+                }
+            ),
+        }
+    )
+
     def put(self, request, dpi_id):
         if not self.check_user_role(request.user, ['administratif'],['medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
-        return self.update_dpi(request, dpi_id, partial=False)
-
-    def patch(self, request, dpi_id):
-        if not self.check_user_role(request.user, ['administratif'],['medecin']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
-        return self.update_dpi(request, dpi_id, partial=True)
-
-    def update_dpi(self, request, dpi_id, partial):
-        if not self.check_user_role(request.user, ['administratif'],['medecin']):
-            return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
-
+        
         try:
             dpi = DossierPatient.objects.get(id=dpi_id)
         except DossierPatient.DoesNotExist:
@@ -118,7 +156,7 @@ class ModifierDossierAPIView(APIView,CheckUserRoleMixin):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = DossierPatientSerializer(dpi, data=request.data, partial=partial)
+        serializer = DossierPatientSerializer(dpi, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -317,9 +355,15 @@ from rest_framework import serializers
 from django.contrib import messages
 
 def create_dpi(request):
+    # Vérifie si la méthode de la requête est 'POST'
     if request.method == 'POST':
+        # Initialise un formulaire 'DossierPatientForm' avec les données envoyées dans la requête
         form = DossierPatientForm(request.POST)
+
+        # Si le formulaire est valide (tous les champs requis sont remplis correctement)
         if form.is_valid():
+            # Récupère les données du formulaire pour créer un nouveau dossier patient
+
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
 
@@ -329,7 +373,7 @@ def create_dpi(request):
             date_naissance = form.cleaned_data['date_naissance']
             tel = form.cleaned_data['tel']
             mutuelle = form.cleaned_data['mutuelle']
-            medecin_traitant_email = form.cleaned_data['medecin_traitant_email']
+            medecin_traitant = form.cleaned_data['medecin_traitant']
             personne_a_contacter = form.cleaned_data['personne_a_contacter']
             nss = form.cleaned_data['nss']
             
@@ -337,21 +381,12 @@ def create_dpi(request):
 
             
 
-            #creation du cmpte 
+            # Création d'un compte utilisateur (User) avec les données du formulaire 
             User = get_user_model()
             user=User.objects.create_user(email=email, password=password,role="patient")
 
-
-            #creer patient
-        try:
-            technicien_user = User.objects.get(email=medecin_traitant_email)
-            medecin_traitant = technicien_user.technician  # Access the Technician instance related to the User
-        except User.DoesNotExist:
-            raise serializers.ValidationError(f"No technician found with email {medecin_traitant_email}")
-        except Technician.DoesNotExist:
-            raise serializers.ValidationError(f"The user with email {medecin_traitant_email} is not a technician")
-
-
+        
+        # Création d'un objet Patient avec les données recueillies et l'utilisateur créé
         patient = Patient.objects.create(
                 nom=nom,
                 prenom=prenom,
@@ -366,21 +401,22 @@ def create_dpi(request):
             )
         
 
-        # Simuler la création du DPI
+        
         
         # Génération du QR code
-        qr_data = {"Patient": patient.nom, "ID": patient.id}  # Dictionnaire valide
-        qr_data_str = json.dumps(qr_data)  # Conversion en chaîne JSON
-        qr_image = qrcode.make(qr_data_str)
-        buffer = io.BytesIO()
-        qr_image.save(buffer, format="PNG")
+        qr_data = {"Patient": patient.nom, "ID": patient.id}  # Données à intégrer dans le QR code
+        qr_data_str = json.dumps(qr_data)  # Convertit les données en chaîne JSON
+        qr_image = qrcode.make(qr_data_str) # Crée l'image du QR code à partir des données
+        buffer = io.BytesIO() # Crée un tampon en mémoire pour l'image
+        qr_image.save(buffer, format="PNG")  # Sauvegarde l'image au format PNG dans le tampon
             
-        buffer.seek(0)
+        buffer.seek(0) # Se positionne au début du tampon
 
             # Création du fichier image pour l'ImageField
         qr_file = ContentFile(buffer.read(), name=f"qr_patient_{patient.id}.png")
-        buffer.close()
-             
+        buffer.close() # Ferme le tampon mémoire
+
+        # Crée un objet DossierPatient avec le patient et l'image du QR code    
         dossier = DossierPatient.objects.create(patient=patient, qr=qr_file)
         
        
@@ -389,8 +425,10 @@ def create_dpi(request):
 
         
     else:
+        # Si la méthode de la requête n'est pas POST, crée un formulaire vide
         form = DossierPatientForm()
 
+    # Rendu de la page avec le formulaire, qu'il soit pré-rempli (POST) ou vide (GET)
     return render(request, 'dpi.html', {'form': form})
 
 

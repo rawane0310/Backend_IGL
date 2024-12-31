@@ -46,6 +46,8 @@ class RegisterUserView(APIView, CheckUserRoleMixin):
         request_body=UserRegistrationSerializer,
     )
     def post(self, request):
+        if not self.check_user_role(request.user, ['admin']):
+            return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = UserRegistrationSerializer(data=request.data)
 
@@ -458,30 +460,15 @@ class AdministratifView(APIView,CheckUserRoleMixin):
     #create new administratif (post)
     @swagger_auto_schema(
         operation_summary="Create a new administratif",
-        operation_description="Allows users with the administrator role to create a new administratif by providing the necessary details.",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Last name of the administratif user"),
-                "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Firest name of the administratif user"),
-                "user": openapi.Schema(type=openapi.TYPE_STRING, description="id of the user in User table administratif user"),
-            },
-            required=["nom", "prenom", "user"],
-        ),
+        operation_description="Allows an admin to create a new administratif by providing the required details.",
+        request_body=AdminstratifSerializer,
         responses={
-            201: openapi.Response("Created", openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the created administratif"),
-                    "nom": openapi.Schema(type=openapi.TYPE_STRING, description="Email of the administratif"),
-                    "prenom": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
-                    "user": openapi.Schema(type=openapi.TYPE_STRING, description="Name of the administratif"),
-                }
-            )),
-            400: "Bad Request",
-            403: "Forbidden",
-        }
+            201: AdminstratifSerializer,
+            400: "Bad Request - Validation errors.",
+            403: "Forbidden - User does not have the required role.",
+        },
     )
+    
     def post(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,['admin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -498,29 +485,24 @@ class AdministratifView(APIView,CheckUserRoleMixin):
     # Update an existing administratif (PUT)
     @swagger_auto_schema(
         operation_summary="Update an existing administratif",
-        operation_description="Allows users with the administratif role to update their details by providing the administratif ID and updated data.",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name of the administratif user"),
-                "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email of the administratif user"),
-            },
-        ),
+        operation_description="Allows an administratif to update their details by providing the ID of the administratif and the updated details.",
+        manual_parameters=[
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="Primary key of the administratif to update.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
+        request_body=AdminstratifSerializer,
         responses={
-            200: openapi.Response("OK", openapi.Schema(
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID of the administratif"),
-                    "name": openapi.Schema(type=openapi.TYPE_STRING, description="Updated name"),
-                    "email": openapi.Schema(type=openapi.TYPE_STRING, description="Updated email"),
-                }
-            )),
-            400: "Bad Request",
-            403: "Forbidden",
-            404: "Not Found",
-        }
+            200: AdminstratifSerializer,
+            400: "Bad Request - Validation errors.",
+            403: "Forbidden - User does not have the required role.",
+            404: "Not Found - Administratif does not exist.",
+        },
     )
-     
     def put(self, request, *args, **kwargs):
         if not self.check_user_role(request.user,['administratif']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -539,15 +521,24 @@ class AdministratifView(APIView,CheckUserRoleMixin):
     # Delete an administratif (DELETE)
     @swagger_auto_schema(
         operation_summary="Delete an administratif",
-        operation_description="Allows users with the administratif role to delete an administratif by providing its ID.",
+        operation_description="Allows an admin to delete the administratif account by providing the ID of the administratif.",
+        manual_parameters=[
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="Primary key of the administratif to delete.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
         responses={
-            200: "Administratif deleted successfully.",
-            403: "Forbidden",
-            404: "Not Found",
-        }
+            200: "Successfully deleted the administratif.",
+            403: "Forbidden - User does not have the required role.",
+            404: "Not Found - Administratif does not exist.",
+        },
     )
     def delete(self, request, *args, **kwargs):
-        if not self.check_user_role(request.user, ['administratif']):
+        if not self.check_user_role(request.user, ['admin']):
             return Response({'error': 'You do not have permission to delete this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -571,6 +562,7 @@ class AdminView(APIView,CheckUserRoleMixin):
      # Create a new admin (POST)
     @swagger_auto_schema(
         operation_description="Create a new admin. This action can only be performed by an 'admin'.",
+
         request_body=AdminSerializer,
         responses={
             201: openapi.Response('Admin created successfully', AdminSerializer),
@@ -596,6 +588,15 @@ class AdminView(APIView,CheckUserRoleMixin):
     # Get a specific admin or list of admins (GET)
     @swagger_auto_schema(
         operation_description="Get a specific admin or a list of admins. This action can only be performed by an 'admin'.",
+        manual_parameters=[
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="Primary key of the admin to get.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
         responses={
             200: openapi.Response('Admin details', AdminSerializer),
             404: 'Admin not found',
@@ -626,6 +627,15 @@ class AdminView(APIView,CheckUserRoleMixin):
 
     @swagger_auto_schema(
         operation_description="Update an existing admin. This action can only be performed by an 'admin'.",
+        manual_parameters=[
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="Primary key of the admin to modify.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
         request_body=AdminSerializer,
         responses={
             200: openapi.Response('Admin updated successfully', AdminSerializer),
@@ -656,6 +666,15 @@ class AdminView(APIView,CheckUserRoleMixin):
     
     @swagger_auto_schema(
         operation_description="Delete an existing admin. This action can only be performed by an 'admin'.",
+        manual_parameters=[
+            openapi.Parameter(
+                'pk',
+                openapi.IN_PATH,
+                description="Primary key of the admin to delete.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            )
+        ],
         responses={
             204: 'Admin deleted successfully',
             403: 'Forbidden - You do not have permission to delete this resource',
@@ -866,6 +885,48 @@ from rest_framework import serializers
 from  .forms import LoginForm
 
 def login_view(request):
+    """
+    Vue permettant à un utilisateur de se connecter à l'application.
+
+    Fonctionnalités principales :
+    - Accepte une requête HTTP POST contenant les informations d'identification (email et mot de passe).
+    - Valide les données envoyées via un formulaire `LoginForm`.
+    - Authentifie l'utilisateur en utilisant les informations d'identification fournies.
+    - Connecte l'utilisateur en session si les informations sont valides.
+    - Retourne une réponse JSON en cas de succès, ou affiche le formulaire en cas d'échec.
+
+    Arguments :
+    - request : Requête HTTP reçue par le serveur.
+
+    Flux de contrôle :
+    1. Si la méthode HTTP est 'POST' :
+       - Récupère les données envoyées dans la requête via `LoginForm`.
+       - Valide les données du formulaire.
+       - Si valides, récupère l'email et le mot de passe saisis.
+       - Authentifie l'utilisateur à l'aide de `authenticate`.
+       - Si l'utilisateur est valide, connecte-le via `login` et retourne une réponse JSON indiquant le succès.
+    2. Si la méthode HTTP n'est pas 'POST' :
+       - Retourne un formulaire vide pour permettre à l'utilisateur de saisir ses informations.
+    3. Retourne un rendu HTML avec le formulaire en cas d'échec ou de méthode GET.
+
+    Retour :
+    - JSON : Indique le succès du login pour les requêtes POST valides.
+    - Page HTML : Affiche le formulaire de connexion dans les autres cas.
+
+    Exceptions gérées :
+    - Si les données du formulaire ne sont pas valides, le formulaire est retourné avec les erreurs.
+    - Si l'utilisateur ne peut pas être authentifié, le formulaire est affiché à nouveau sans connexion.
+
+    
+    Exemple d'utilisation :
+    - URL : `accounts/loginTest/`
+    - Méthode POST : 
+      {
+          "email": "test@gmail.com",
+          "password": "password123"
+      }
+      -> Réponse JSON : {"status": "success", "message": "Login successful"}
+    """
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():

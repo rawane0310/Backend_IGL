@@ -10,6 +10,8 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from accounts.mixin import CheckUserRoleMixin
 from django.shortcuts import get_object_or_404
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class ResultatExamenView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
@@ -204,6 +206,43 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
     """
     permission_classes=[IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Create a new radiology image",
+        operation_description="This endpoint allows radiologists to create a new radiology image associated with an examination.",
+        request_body=RadiologyImageSerializer,
+        responses={
+            201: openapi.Response(
+                description="Radiology image created successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "examen_radiologique": 12,
+                        "image": "/media/radiology_images/sample.jpg",
+                        "uploaded_at": "2024-12-31T12:00:00Z",
+                        "titre": "Chest X-ray"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "examen_radiologique": ["This field is required."],
+                        "image": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create this resource."
+                    }
+                }
+            ),
+        }
+    )
+
     def post(self, request):
         
         """
@@ -217,6 +256,55 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    @swagger_auto_schema(
+        operation_summary="Update an existing radiology image",
+        operation_description="This endpoint allows radiologists to update an existing radiology image by providing its ID.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="ID of the radiology image to be updated", type=openapi.TYPE_INTEGER, required=True)
+        ],
+        request_body=RadiologyImageSerializer,
+        responses={
+            200: openapi.Response(
+                description="Radiology image updated successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "examen_radiologique": 12,
+                        "image": "/media/radiology_images/sample_updated.jpg",
+                        "uploaded_at": "2024-12-31T12:00:00Z",
+                        "titre": "Updated Chest X-ray"
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "examen_radiologique": ["This field is required."]
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Radiology image not found.",
+                examples={
+                    "application/json": {
+                        "error": "Radiology image not found."
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to modify this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+        }
+    )
 
     def put(self, request, pk):
         
@@ -233,6 +321,43 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+    
+    @swagger_auto_schema(
+        operation_summary="Delete a radiology image",
+        operation_description="This endpoint allows radiologists to delete a radiology image by providing its ID.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="ID of the radiology image to be deleted", type=openapi.TYPE_INTEGER, required=True)
+        ],
+        responses={
+            204: openapi.Response(
+                description="Radiology image deleted successfully.",
+                examples={
+                    "application/json": {
+                        "message": "Image deleted successfully"
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Radiology image not found.",
+                examples={
+                    "application/json": {
+                        "error": "Radiology image not found."
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to delete this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+        }
+    )
+
     def delete(self, request, pk):
         
         """
@@ -245,6 +370,43 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
         image = get_object_or_404(RadiologyImage, pk=pk)
         image.delete()
         return Response({'message': 'Image deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+    @swagger_auto_schema(
+        operation_summary="Search for radiology images",
+        operation_description="This endpoint allows users (patient,radiologue,medecin) to search for radiology images based on multiple filters like image ID, file path, date, exam, or title.",
+        manual_parameters=[
+            openapi.Parameter('id', openapi.IN_QUERY, description="Search by image ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('image', openapi.IN_QUERY, description="Search by image file path", type=openapi.TYPE_STRING),
+            openapi.Parameter('date', openapi.IN_QUERY, description="Search by image upload date", type=openapi.TYPE_STRING, format='date'),
+            openapi.Parameter('examen', openapi.IN_QUERY, description="Search by associated radiological exam", type=openapi.TYPE_STRING),
+            openapi.Parameter('titre', openapi.IN_QUERY, description="Search by image title or description", type=openapi.TYPE_STRING),
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of radiology images matching the search criteria.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "examen_radiologique": 12,
+                            "image": "/media/radiology_images/sample.jpg",
+                            "uploaded_at": "2024-12-31T12:00:00Z",
+                            "titre": "Chest X-ray"
+                        }
+                    ]
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to search this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to search this resource."
+                    }
+                }
+            ),
+        }
+    )
 
     def get(self, request):
         """
@@ -344,11 +506,11 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
  
 
 class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        #if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
-         #   return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
+        if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
+            return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         id = request.GET.get('id',None)
         technicien = request.GET.get('technicien', None)
@@ -442,7 +604,7 @@ class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
 ###########################################################################################################################################
 
 
-class GraphiquePatientView(APIView):
+class GraphiquePatientView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     def get(self, request, patient_id):
         if not self.check_user_role(request.user,technician_roles=['laborantin','medecin']):
