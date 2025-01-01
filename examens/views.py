@@ -255,10 +255,10 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
                     "application/json": {
                         "id": 1,
                         "examen_radiologique": 12,
-                        "image": "/media/radiology_images/sample.jpg",
+                        
                         "uploaded_at": "2024-12-31T12:00:00Z",
                         "titre": "Chest X-ray",
-                        "image_url": "http://127.0.0.1:8000/media/radiology_images/sample.jpg"
+                        "image": "http://127.0.0.1:8000/media/radiology_images/sample.jpg"
                     }
                 }
             ),
@@ -315,9 +315,13 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             # Construire l'URL complète de l'image
             image_url = request.build_absolute_uri(radiology_image.image.url)
 
-            # Ajouter l'URL complète de l'image dans la réponse
-            response_data = serializer.data
-            response_data['image_url'] = image_url
+            response_data = {
+            'id': radiology_image.id,
+            'examen_radiologique': radiology_image.examen_radiologique_id,
+            'image': image_url,
+            'titre': radiology_image.titre,
+            'uploaded_at': radiology_image.uploaded_at
+        }
 
             return Response(response_data, status=status.HTTP_201_CREATED)
 
@@ -339,7 +343,7 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
                     "application/json": {
                         "id": 1,
                         "examen_radiologique": 12,
-                        "image": "/media/radiology_images/sample_updated.jpg",
+                        
                         "uploaded_at": "2024-12-31T12:00:00Z",
                         "titre": "Updated Chest X-ray",
                         "image_url": "http://127.0.0.1:8000/media/radiology_images/sample_updated.jpg"
@@ -388,8 +392,13 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             serializer.save()
             # Ajout de l'URL complète de l'image
             image_url = request.build_absolute_uri(image.image.url)
-            response_data = serializer.data
-            response_data['image_url'] = image_url
+            response_data = {
+            'id': image.id,
+            'examen_radiologique': image.examen_radiologique_id,
+            'image': image_url,
+            'titre': image.titre,
+            'uploaded_at': image.uploaded_at
+        }
             return Response(response_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
