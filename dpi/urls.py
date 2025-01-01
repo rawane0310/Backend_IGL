@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DossierPatientCreateView , SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView , creatuserPatientView
+from .views import  SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView , creatuserPatientView
 
 from .views import create_dpi
 from . import views
