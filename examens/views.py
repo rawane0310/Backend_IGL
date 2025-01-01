@@ -28,6 +28,22 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user,technician_roles=['laborantin']):
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
+        examen_id = request.data.get('examen_biologique')
+        laborantin_id = request.data.get('laborantin')
+
+        if not laborantin_id:
+            return Response({'error': 'Le champ laborantin est requis.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier si l'examen biologique existe
+        try:
+            examen_biologique = ExamenBiologique.objects.get(id=examen_id)
+        except ExamenBiologique.DoesNotExist:
+            return Response({'error': 'Examen biologique introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Modifier le champ laborantin de l'examen biologique
+        examen_biologique.laborantin_id = laborantin_id
+        examen_biologique.save()
+        
         serializer = ResultatExamenSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -198,18 +214,40 @@ class ExamenRadiologiqueView(APIView):
         
 ###########################################################################################################################################
 
-
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
     """
     API pour gérer les opérations CRUD et la recherche sur RadiologyImage.
     """
     permission_classes=[IsAuthenticated]
-
+    parser_classes = (JSONParser,FormParser,MultiPartParser) 
     @swagger_auto_schema(
         operation_summary="Create a new radiology image",
         operation_description="This endpoint allows radiologists to create a new radiology image associated with an examination.",
-        request_body=RadiologyImageSerializer,
+        request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=["examen_radiologique", "image", "radiologue"],
+        properties={
+            "examen_radiologique": openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description="The ID of the existing radiological examination to associate the image with."
+            ),
+            "radiologue": openapi.Schema(
+                type=openapi.TYPE_INTEGER,
+                description="The ID of the radiologist responsible for this examination."
+            ),
+            "titre": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                description="Optional title or description of the radiology image."
+            ),
+            "image": openapi.Schema(
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_BINARY,
+                description="The uploaded radiology image file."
+            ),
+        },
+    ),
         responses={
             201: openapi.Response(
                 description="Radiology image created successfully.",
@@ -251,6 +289,23 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
         if not self.check_user_role(request.user,technician_roles=['radiologue']):
             return Response({'error': 'You do not have permission to creta this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
+         
+
+        examen_id = request.data.get('examen_radiologique')
+        radiologue_id = request.data.get('radiologue')
+
+        if not radiologue_id:
+            return Response({'error': 'Le champ radiologue est requis.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier si l'examen radiologique existe
+        try:
+            examen_radiologique = ExamenRadiologique.objects.get(id=examen_id)
+        except ExamenRadiologique.DoesNotExist:
+            return Response({'error': 'Examen radiologique introuvable.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Modifier le champ radiologue de l'examen radiologique
+        examen_radiologique.radiologue_id = radiologue_id
+        examen_radiologique.save()
         serializer = RadiologyImageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
