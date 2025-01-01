@@ -1,6 +1,6 @@
 from django.urls import path
+from .views import DossierPatientCreateView , SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView , creatuserPatientView
 
-from .views import creatuserPatientView , SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView
 from .views import create_dpi
 from . import views
 
@@ -12,6 +12,7 @@ urlpatterns = [
     path('search_by_nss/', PatientSearchByNSSView.as_view(), name='dossier-patient-search-by-nss'),
     path('search-patient/<int:dossier_id>/', views.search_patient_by_dossier, name='search_patient_by_dossier'),
     path('registerUserPatient/', creatuserPatientView.as_view() , name='creat_patient_and_dossier'),
+
 
     #pour test fonctionel
     path('create-dpi/', create_dpi, name='create_dpi'),

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import DossierPatient , Patient ,Technician, User
+from accounts.models import DossierPatient , Patient ,Technician , User
 
 class DossierPatientSerializer(serializers.ModelSerializer):
     class Meta:
@@ -67,3 +67,4 @@ class UserPatientSerializer (serializers.ModelSerializer) :
             'nom', 'prenom', 'date_naissance', 'adresse', 'tel', 'mutuelle', 
             'password', 'personne_a_contacter', 'nss', 'email' , 'medecin_traitant'
         ]  
+
