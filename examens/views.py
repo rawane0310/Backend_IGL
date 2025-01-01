@@ -445,7 +445,7 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
                         {
                             "id": 1,
                             "examen_radiologique": 12,
-                            "image": "/media/radiology_images/sample.jpg",
+                            "image": "http://127.0.0.1:8000/media/radiology_images/sample.jpg",
                             "uploaded_at": "2024-12-31T12:00:00Z",
                             "titre": "Chest X-ray"
                         }
@@ -489,8 +489,17 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
         if titre : 
             images = images.filter(titre=titre)    
 
-        serializer = RadiologyImageSerializer(images, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        resultats = []
+        for image in images:
+            full_image_url = request.build_absolute_uri(image.image.url)
+            resultats.append({
+            'id': image.id,
+            'examen_radiologique': image.examen_radiologique.id,
+            'image': full_image_url,
+            'uploaded_at': image.uploaded_at,
+            'titre': image.titre
+            })
+        return Response(resultats, status=status.HTTP_200_OK)
 
 
 
