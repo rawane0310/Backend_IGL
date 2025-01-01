@@ -4,6 +4,7 @@ from accounts.models import ResultatExamen , ExamenBiologique , ExamenRadiologiq
 
 
 class RadiologyImageSerializer(serializers.ModelSerializer):
+    image=serializers.ImageField()
     class Meta:
         model = RadiologyImage
         fields = ['id','examen_radiologique','image','uploaded_at','titre']

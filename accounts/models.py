@@ -209,6 +209,7 @@ class RadiologyImage(models.Model):
     examen_radiologique = models.ForeignKey(
         'ExamenRadiologique',
         on_delete=models.CASCADE,
+        
         related_name='images'
     )
     image = models.ImageField(upload_to='radiology_images/')
