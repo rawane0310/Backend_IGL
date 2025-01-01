@@ -257,7 +257,8 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
                         "examen_radiologique": 12,
                         "image": "/media/radiology_images/sample.jpg",
                         "uploaded_at": "2024-12-31T12:00:00Z",
-                        "titre": "Chest X-ray"
+                        "titre": "Chest X-ray",
+                        "image_url": "http://127.0.0.1:8000/media/radiology_images/sample.jpg"
                     }
                 }
             ),
@@ -303,13 +304,23 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
         except ExamenRadiologique.DoesNotExist:
             return Response({'error': 'Examen radiologique introuvable.'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Modifier le champ radiologue de l'examen radiologique
+        # Modifier le champ radiologue de l'examen radiologique
         examen_radiologique.radiologue_id = radiologue_id
         examen_radiologique.save()
+
         serializer = RadiologyImageSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            radiology_image = serializer.save()
+
+            # Construire l'URL complète de l'image
+            image_url = request.build_absolute_uri(radiology_image.image.url)
+
+            # Ajouter l'URL complète de l'image dans la réponse
+            response_data = serializer.data
+            response_data['image_url'] = image_url
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -330,7 +341,8 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
                         "examen_radiologique": 12,
                         "image": "/media/radiology_images/sample_updated.jpg",
                         "uploaded_at": "2024-12-31T12:00:00Z",
-                        "titre": "Updated Chest X-ray"
+                        "titre": "Updated Chest X-ray",
+                        "image_url": "http://127.0.0.1:8000/media/radiology_images/sample_updated.jpg"
                     }
                 }
             ),
@@ -370,10 +382,16 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         image = get_object_or_404(RadiologyImage, pk=pk)
+        # Validation et mise à jour
         serializer = RadiologyImageSerializer(image, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            # Ajout de l'URL complète de l'image
+            image_url = request.build_absolute_uri(image.image.url)
+            response_data = serializer.data
+            response_data['image_url'] = image_url
+            return Response(response_data, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
