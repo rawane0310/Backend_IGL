@@ -5,6 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import time
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 
 # Spécifiez le chemin du driver
 driver_path = "./chromedriver.exe"
@@ -46,19 +48,21 @@ def test_create_dpi():
         #Étape 3 :Créer un dossier patient
         print("Creation du dpi...")
         driver.get(f"{BASE_URL}/dpi/create-dpi/")
-        driver.find_element(By.NAME, "email").send_keys("test@gmail.com")
+        driver.find_element(By.NAME, "email").send_keys("SarahTest@gmail.com")
         driver.find_element(By.NAME, "password").send_keys("sarah")
         
 
-        driver.find_element(By.NAME, "nom").send_keys("Dupont")
-        driver.find_element(By.NAME, "prenom").send_keys("Jean")
+        driver.find_element(By.NAME, "nom").send_keys("Ait Kaci Azzou")
+        driver.find_element(By.NAME, "prenom").send_keys("Sarah")
         driver.find_element(By.NAME, "date_naissance").send_keys("2004-10-03")
         driver.find_element(By.NAME, "adresse").send_keys("123 rue de Paris")
-        driver.find_element(By.NAME, "tel").send_keys("000479")
+        driver.find_element(By.NAME, "tel").send_keys("0004556879")
         driver.find_element(By.NAME, "mutuelle").send_keys("sante")
-        driver.find_element(By.NAME, "medecin_traitant").send_keys(1)
+        # Sélectionner un médecin traitant dans le menu déroulant
+        select_medecin = Select(driver.find_element(By.NAME, "medecin_traitant"))
+        select_medecin.select_by_value("1")  # Valeur correspondant à l'ID du médecin
         driver.find_element(By.NAME, "personne_a_contacter").send_keys("0577984641")
-        driver.find_element(By.NAME, "nss").send_keys("9746315")
+        driver.find_element(By.NAME, "nss").send_keys("97463415")
 
         driver.find_element(By.TAG_NAME, "button").click()
 
