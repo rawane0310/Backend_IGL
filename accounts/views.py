@@ -876,10 +876,10 @@ class TechnicianSearchByIDView(APIView):
 
  
 
- ## accounts : 
+  
 
  
- # test fonctionel
+ ############################################### test fonctionel ########################################################
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.shortcuts import render,redirect, get_object_or_404

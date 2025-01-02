@@ -271,42 +271,125 @@ class PatientSearchByNSSView(APIView,CheckUserRoleMixin):
         
 
 
+##########################################################################################################################
 
-## retrun patitn object by id 
 
 
-@login_required
-def search_patient_by_dossier(request, dossier_id):
-    
-    # Try to retrieve the dossier and associated patient
-    dossier = get_object_or_404(DossierPatient, id=dossier_id)
-    patient = dossier.patient
+class SearchPatientByDossier(APIView,CheckUserRoleMixin):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+    operation_summary="Search for a patient by dossier ID",
+    operation_description="This endpoint allows users with roles of 'administratif','patient' and 'medecin' to retrieve detailed information about a patient associated with the specified dossier ID.",
+    manual_parameters=[
+        openapi.Parameter(
+            'dossier_id',
+            openapi.IN_PATH,
+            description="The ID of the dossier to search for.",
+            type=openapi.TYPE_INTEGER
+        )
+    ],
+    responses={
+        200: openapi.Response(
+            description="Patient details retrieved successfully.",
+            examples={
+                "application/json": {
+                    "qr": "http://127.0.0.1:8000/media/qr_code/qr_patient_32.png",
+                    "id": 1,
+                    "nom": "Doe",
+                    "prenom": "John",
+                    "date_naissance": "1990-01-01",
+                    "adresse": "123 Main St",
+                    "tel": "1234567890",
+                    "mutuelle": "ABC Insurance",
+                    "medecin_traitant": 2,
+                    "personne_a_contacter": "Jane Doe",
+                    "nss": "123456789"
+                }
+            }
+        ),
+        403: openapi.Response(
+            description="Access denied. Authentication is required to access this resource.",
+            examples={
+                "application/json": {
+                    "error": "Authentication credentials were not provided."
+                }
+            }
+        ),
+        404: openapi.Response(
+            description="Dossier not found.",
+            examples={
+                "application/json": {
+                    "error": "The specified dossier does not exist."
+                    }
+                }
+            )
+        }
+    )
+    def get(self,request, dossier_id):
+        if not self.check_user_role(request.user, user_roles=['administratif','patient'], technician_roles=['medecin']):
+            return Response({'error': 'You do not have permission to create a patient user.'},status=status.HTTP_403_FORBIDDEN )
+        # Try to retrieve the dossier and associated patient
+        dossier = get_object_or_404(DossierPatient, id=dossier_id)
+        patient = dossier.patient
 
-    # Construire l'URL absolue pour le QR code
-    qr_url = request.build_absolute_uri(dossier.qr.url) if dossier.qr else None
-    # Return patient details in JSON format
-    response_data = {
-        'qr': qr_url,
-        'id': patient.id,
-        'nom': patient.nom,
-        'prenom': patient.prenom,
-        'date_naissance': patient.date_naissance.strftime('%Y-%m-%d'),
-        'adresse': patient.adresse,
-        'tel': patient.tel,
-        'mutuelle': patient.mutuelle,
-        'medecin_traitant': patient.medecin_traitant.id if patient.medecin_traitant else None,
-        'personne_a_contacter': patient.personne_a_contacter,
-        'nss': patient.nss,
+        # Construire l'URL absolue pour le QR code
+        qr_url = request.build_absolute_uri(dossier.qr.url) if dossier.qr else None
+        # Return patient details in JSON format
+        response_data = {
+            'qr': qr_url,
+            'id': patient.id,
+            'nom': patient.nom,
+            'prenom': patient.prenom,
+            'date_naissance': patient.date_naissance.strftime('%Y-%m-%d'),
+            'adresse': patient.adresse,
+            'tel': patient.tel,
+            'mutuelle': patient.mutuelle,
+            'medecin_traitant': patient.medecin_traitant.id if patient.medecin_traitant else None,
+            'personne_a_contacter': patient.personne_a_contacter,
+            'nss': patient.nss,
     }
-    return JsonResponse(response_data) 
+        return JsonResponse(response_data)
+ 
 
 
 
-
+###########################################################################################################################################
 
 class creatuserPatientView(APIView, CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Create a new patient user and associated medical file",
+        operation_description="This endpoint allows administrative staff or doctors to create a new patient user, along with their associated medical file and QR code.",
+        request_body=UserPatientSerializer,
+        responses={
+            201: openapi.Response(
+                description="Patient registered successfully, and medical file created successfully.",
+                examples={
+                    "application/json": {
+                        "message": "Patient registered successfully, and dossier created successfully."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "email": ["A user with this email already exists."],
+                        "password": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create a patient user.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create a patient user."
+                    }
+                }
+            )
+        }
+    )
 
     @action(methods=['POST'], detail=False)
     def post(self, request):
@@ -378,7 +461,7 @@ class creatuserPatientView(APIView, CheckUserRoleMixin):
 
 
 
-###################################### test fonctionel ###################################################
+###################################################### test fonctionel #############################################################################
 from rest_framework import serializers
 from django.contrib import messages
 
