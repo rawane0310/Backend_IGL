@@ -16,6 +16,15 @@ from drf_yasg import openapi
 class ResultatExamenView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve all exam results",
+        operation_description="This endpoint retrieves all exam results. Requires the user to have the role of 'patient', 'laborantin', or 'medecin'.",
+        responses={
+            200: ResultatExamenSerializer(many=True),
+            403: openapi.Response("You do not have permission to get this resource.")
+        }
+    )
+    
     def get(self, request):
         if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to get this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -23,6 +32,18 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         resultats = ResultatExamen.objects.all()
         serializer = ResultatExamenSerializer(resultats, many=True)
         return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Create a new exam result",
+        operation_description="This endpoint allows a 'laborantin' to create a new exam result by providing the necessary details.",
+        request_body=ResultatExamenSerializer,
+        responses={
+            201: ResultatExamenSerializer,
+            400: openapi.Response("Invalid input data."),
+            403: openapi.Response("You do not have permission to create this resource."),
+            404: openapi.Response("Examen biologique not found.")
+        }
+    )
 
     def post(self, request):
         if not self.check_user_role(request.user,technician_roles=['laborantin']):
@@ -50,6 +71,21 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Update an existing exam result",
+        operation_description="This endpoint allows a 'laborantin' or 'medecin' to update an existing exam result.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the exam result to update", type=openapi.TYPE_INTEGER)
+        ],
+        request_body=ResultatExamenSerializer,
+        responses={
+            200: ResultatExamenSerializer,
+            400: openapi.Response("Invalid input data."),
+            403: openapi.Response("You do not have permission to modify this resource."),
+            404: openapi.Response("Exam result not found.")
+        }
+    )
+
     def put(self, request, pk):
         if not self.check_user_role(request.user,technician_roles=['laborantin','medecin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -59,11 +95,24 @@ class ResultatExamenView(APIView,CheckUserRoleMixin):
         except ResultatExamen.DoesNotExist:
             return Response({'error': 'Résultat d\'examen non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ResultatExamenSerializer(resultat, data=request.data)
+        serializer = ResultatExamenSerializer(resultat, data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete an exam result",
+        operation_description="This endpoint allows a 'laborantin' to delete an existing exam result.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the exam result to delete", type=openapi.TYPE_INTEGER)
+        ],
+        responses={
+            204: openapi.Response("Exam result successfully deleted."),
+            403: openapi.Response("You do not have permission to delete this resource."),
+            404: openapi.Response("Exam result not found.")
+        }
+    )
 
     def delete(self, request, pk):
         if not self.check_user_role(request.user,technician_roles=['laborantin']):
@@ -101,11 +150,57 @@ class ExamenBiologiqueView(APIView):
             return False  # No related Technician instance
         
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve all biological exams",
+        operation_description="Fetch all biological exams recorded in the system.",
+        responses={
+            200: ExamenBiologiqueSerializer(many=True),
+        }
+    )
+
     def get(self, request):
         
         examens = ExamenBiologique.objects.all()
         serializer = ExamenBiologiqueSerializer(examens, many=True)
         return Response(serializer.data)
+    
+    @swagger_auto_schema(
+        operation_summary="Create a biological exam",
+        operation_description="Allows a user with the 'medecin' role to create a new biological exam.",
+        request_body=ExamenBiologiqueSerializer,
+        responses={
+            201: openapi.Response(
+                description="Biological exam created successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "technicien": 1,
+                        "laborantin": 2,
+                        "description": "Blood test for anemia.",
+                        "dossier_patient": 5
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "date": ["This field is required."],
+                        "description": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create this resource."
+                    }
+                }
+            )
+        }
+    )
 
     def post(self, request):
         if not self.check_user_role(request.user, allowed_roles=['medecin']):
@@ -117,6 +212,54 @@ class ExamenBiologiqueView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Update a biological exam",
+        operation_description="Allows a user with the 'medecin' or 'laborantin' role to update an existing biological exam.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the biological exam to update", type=openapi.TYPE_INTEGER)
+        ],
+        request_body=ExamenBiologiqueSerializer,
+        responses={
+            200: openapi.Response(
+                description="Biological exam updated successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "technicien": 1,
+                        "laborantin": 2,
+                        "description": "Updated blood test details.",
+                        "dossier_patient": 5
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "description": ["This field may not be blank."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to modify this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Biological exam not found.",
+                examples={
+                    "application/json": {
+                        "error": "Examen Biologique non trouvé."
+                    }
+                }
+            )
+        }
+    )
+
     def put(self, request, pk):
         if not self.check_user_role(request.user, allowed_roles=['medecin', 'laborantin']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -126,11 +269,40 @@ class ExamenBiologiqueView(APIView):
         except ExamenBiologique.DoesNotExist:
             return Response({'error': 'Examen Biologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ExamenBiologiqueSerializer(examen, data=request.data)
+        serializer = ExamenBiologiqueSerializer(examen, data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a biological exam",
+        operation_description="Allows a user with the 'medecin' role to delete an existing biological exam.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the biological exam to delete", type=openapi.TYPE_INTEGER)
+        ],
+        responses={
+            204: openapi.Response(
+                description="Biological exam deleted successfully."
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to delete this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Biological exam not found.",
+                examples={
+                    "application/json": {
+                        "error": "Examen Biologique non trouvé."
+                    }
+                }
+            )
+        }
+    )
 
     def delete(self, request, pk):
         if not self.check_user_role(request.user, allowed_roles=['medecin']):
@@ -168,12 +340,58 @@ class ExamenRadiologiqueView(APIView):
         except Technician.DoesNotExist:
             return False  # No related Technician instance
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve all radiological exams",
+        operation_description="This endpoint allows retrieving all radiological exams.",
+        responses={
+            200: ExamenRadiologiqueSerializer(many=True),
+        }
+    )
 
     def get(self, request):
         
         examens = ExamenRadiologique.objects.all()
         serializer = ExamenRadiologiqueSerializer(examens, many=True)
         return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_summary="Create a radiological exam",
+        operation_description="This endpoint allows authorized users with the role of 'medecin' to create a radiological exam.",
+        request_body=ExamenRadiologiqueSerializer,
+        responses={
+            201: openapi.Response(
+                description="Radiological exam created successfully.",
+                examples={
+                    "application/json": {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "technicien": 1,
+                        "radiologue": 2,
+                        "compte_rendu": "Exam results noted.",
+                        "description": "Chest X-ray.",
+                        "dossier_patient": 12
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "date": ["This field is required."],
+                        "description": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to create this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to create this resource."
+                    }
+                }
+            )
+        }
+    )
 
     def post(self, request):
         
@@ -186,6 +404,42 @@ class ExamenRadiologiqueView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_summary="Update a radiological exam",
+        operation_description="This endpoint allows authorized users with the roles of 'medecin' or 'radiologue' to update a radiological exam.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the radiological exam to update", type=openapi.TYPE_INTEGER)
+        ],
+        request_body=ExamenRadiologiqueSerializer,
+        responses={
+            200: ExamenRadiologiqueSerializer,
+            400: openapi.Response(
+                description="Invalid data provided.",
+                examples={
+                    "application/json": {
+                        "description": ["This field is required."]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to modify this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to modify this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Radiological exam not found.",
+                examples={
+                    "application/json": {
+                        "error": "Examen Radiologique non trouv\u00e9."
+                    }
+                }
+            )
+        }
+    )
+
     def put(self, request, pk):
         if not self.check_user_role(request.user, allowed_roles=['medecin', 'radiologue']):
             return Response({'error': 'You do not have permission to modify this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -195,11 +449,40 @@ class ExamenRadiologiqueView(APIView):
         except ExamenRadiologique.DoesNotExist:
             return Response({'error': 'Examen Radiologique non trouvé'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ExamenRadiologiqueSerializer(examen, data=request.data)
+        serializer = ExamenRadiologiqueSerializer(examen, data=request.data,partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_summary="Delete a radiological exam",
+        operation_description="This endpoint allows authorized users with the role of 'medecin' to delete a radiological exam.",
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Primary key of the radiological exam to delete", type=openapi.TYPE_INTEGER)
+        ],
+        responses={
+            204: openapi.Response(
+                description="No content, radiological exam successfully deleted.",
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to delete this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to delete this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Radiological exam not found.",
+                examples={
+                    "application/json": {
+                        "error": "Examen Radiologique non trouve."
+                    }
+                }
+            )
+        }
+    )
 
     def delete(self, request, pk):
         if not self.check_user_role(request.user, allowed_roles=['medecin']):
@@ -534,6 +817,64 @@ class RadiologyImageAPIView(APIView,CheckUserRoleMixin):
 class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Search for biological exams",
+        operation_description="Allows authenticated users with appropriate roles to search for biological exams based on various criteria.",
+        manual_parameters=[
+            openapi.Parameter('id', openapi.IN_QUERY, description="ID of the biological exam", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('technicien', openapi.IN_QUERY, description="Technician's name (partial match)", type=openapi.TYPE_STRING),
+            openapi.Parameter('date', openapi.IN_QUERY, description="Date of the exam (YYYY-MM-DD)", type=openapi.TYPE_STRING),
+            openapi.Parameter('dossier', openapi.IN_QUERY, description="Patient file ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('description', openapi.IN_QUERY, description="Exam description (partial match)", type=openapi.TYPE_STRING),
+            openapi.Parameter('laborantin', openapi.IN_QUERY, description="Laborantin's name (partial match)", type=openapi.TYPE_STRING)
+        ],
+        responses={
+            200: openapi.Response(
+                description="List of biological exams matching the criteria.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "date": "2024-12-31",
+                            "description": "Blood test",
+                            "dossier_patient": 15,
+                            "technicien": 3,
+                            "nom_medecin": "Dada",
+                            "prenom_medecin": "Dalia",
+                            "laborantin": 5,
+                            "nom_lab": "Smith",
+                            "prenom_lab": "Jone"
+                        }
+                    ]
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. The user does not have permission to perform this action.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to search for this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="No matching biological exams found.",
+                examples={
+                    "application/json": {
+                        "error": "No biological exams found matching the criteria."
+                    }
+                }
+            ),
+            400: openapi.Response(
+                description="Bad request due to incorrect parameters or other errors.",
+                examples={
+                    "application/json": {
+                        "detail": "Invalid input data."
+                    }
+                }
+            )
+        }
+    )
+    
     def get(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -599,6 +940,113 @@ class SearchExamenBiologiqueView(APIView,CheckUserRoleMixin):
 class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+    operation_summary="Search for radiological exams (Examens Radiologiques)",
+    operation_description=(
+        "This endpoint allows authenticated users to search for radiological exams "
+        "based on various optional filters such as exam ID, technician name, date, radiologist, "
+        "report, patient file ID, and description."
+    ),
+    manual_parameters=[
+        openapi.Parameter(
+            "id",
+            openapi.IN_QUERY,
+            description="ID of the radiological exam to search for.",
+            type=openapi.TYPE_INTEGER,
+            required=False,
+        ),
+        openapi.Parameter(
+            "technicien",
+            openapi.IN_QUERY,
+            description="Name of the technician to filter by (case-insensitive).",
+            type=openapi.TYPE_STRING,
+            required=False,
+        ),
+        openapi.Parameter(
+            "date",
+            openapi.IN_QUERY,
+            description="Date of the exam to search for (format: YYYY-MM-DD).",
+            type=openapi.TYPE_STRING,
+            format=openapi.FORMAT_DATE,
+            required=False,
+        ),
+        openapi.Parameter(
+            "radiologue",
+            openapi.IN_QUERY,
+            description="Name of the radiologist to filter by (case-insensitive).",
+            type=openapi.TYPE_STRING,
+            required=False,
+        ),
+        openapi.Parameter(
+            "compte_rendu",
+            openapi.IN_QUERY,
+            description="Report content to filter by (case-insensitive).",
+            type=openapi.TYPE_STRING,
+            required=False,
+        ),
+        openapi.Parameter(
+            "dossier",
+            openapi.IN_QUERY,
+            description="Patient file ID to search for.",
+            type=openapi.TYPE_INTEGER,
+            required=False,
+        ),
+        openapi.Parameter(
+            "description",
+            openapi.IN_QUERY,
+            description="Description of the exam to filter by (case-insensitive).",
+            type=openapi.TYPE_STRING,
+            required=False,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description="List of matching radiological exams.",
+            examples={
+                "application/json": [
+                    {
+                        "id": 1,
+                        "date": "2024-12-31",
+                        "description": "Chest X-ray",
+                        "dossier_patient": 12,
+                        "compte_rendu": "Normal findings.",
+                        "technicien": 3,
+                        "nom_medecin": "Smith",
+                        "prenom_medecin": "John",
+                        "radiologue": 5,
+                        "nom_radiologue": "Doe",
+                        "prenom_radiologue": "Jane"
+                    }
+                ]
+            },
+        ),
+        403: openapi.Response(
+            description="Access denied. You do not have permission to search for this resource.",
+            examples={
+                "application/json": {
+                    "error": "You do not have permission to search for this resource."
+                }
+            },
+        ),
+        404: openapi.Response(
+            description="No radiological exams found matching the criteria.",
+            examples={
+                "application/json": {
+                    "error": "No radiological exams found matching the criteria."
+                }
+            },
+        ),
+        400: openapi.Response(
+            description="Bad request. An unexpected error occurred.",
+            examples={
+                "application/json": {
+                    "detail": "An error occurred during the search."
+                    }
+                },
+            ),
+        }
+    )
+    
     def get(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['patient'],['radiologue','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -667,6 +1115,80 @@ class SearchExamenRadiologiqueView(APIView,CheckUserRoleMixin):
 class SearchResultatBiologiqueByIdView(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="Search biological examination results by ID",
+        operation_description=(
+            "This endpoint allows users to search for biological examination results using "
+            "the `idExamenBio` and optionally filter results by `parametre`."
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "idExamenBio",
+                openapi.IN_QUERY,
+                description="ID of the biological examination to search for.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "parametre",
+                openapi.IN_QUERY,
+                description="Optional parameter to filter results by specific criteria.",
+                type=openapi.TYPE_STRING,
+                required=False,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Results found successfully.",
+                examples={
+                    "application/json": [
+                        {
+                            "id": 1,
+                            "examen_biologique": 101,
+                            "parametre": "Glucose",
+                            "valeur": "5.5",
+                            "unite": "mmol/L",
+                            "commentaire": "normal",
+                        },
+                        {
+                            "id": 2,
+                            "examen_biologique": 101,
+                            "parametre": "Cholesterol",
+                            "valeur": "4.2",
+                            "unite": "mmol/L",
+                            "commentaire": "normal",
+                            
+                        },
+                    ]
+                },
+            ),
+            400: openapi.Response(
+                description="Invalid or missing parameters.",
+                examples={
+                    "application/json": {
+                        "detail": "idExamenBio is required."
+                    }
+                },
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to search for this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to search for this resource."
+                    }
+                },
+            ),
+            404: openapi.Response(
+                description="No results found for the specified ID.",
+                examples={
+                    "application/json": {
+                        "detail": "No result found for the given idExamenBio."
+                    }
+                },
+            ),
+        }
+    )
+
     def get(self, request, *args, **kwargs):
         if not self.check_user_role(request.user, ['patient'],['laborantin','medecin']):
             return Response({'error': 'You do not have permission to search for this resource.'}, status=status.HTTP_403_FORBIDDEN)
@@ -714,6 +1236,57 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
         
         return data
 
+    @swagger_auto_schema(
+        operation_summary="Retrieve datasets for a patient's biological exam results.",
+        operation_description=(
+            "This endpoint allows users with roles 'laborantin' and 'medecin' to retrieve labels and datasets for graphical representation "
+            "of a patient's biological exam results. The datasets include the current exam "
+            "and the most recent previous exam if available."
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                name="pk",
+                in_=openapi.IN_PATH,
+                description="ID of the biological exam to retrieve.",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Datasets retrieved successfully.",
+                examples={
+                    "application/json": {
+                        "labels": ["Glucose (mg/dL)", "Cholesterol (mg/dL)"],
+                        "datasets": [
+                            {
+                                "data": [85, 190]
+                            },
+                            {
+                                "data": [80, 200]
+                            }
+                        ]
+                    }
+                }
+            ),
+            403: openapi.Response(
+                description="Access denied. You do not have permission to view this resource.",
+                examples={
+                    "application/json": {
+                        "error": "You do not have permission to see this resource."
+                    }
+                }
+            ),
+            404: openapi.Response(
+                description="Biological exam not found.",
+                examples={
+                    "application/json": {
+                        "detail": "Examen non trouvé"
+                    }
+                }
+            ),
+        }
+    )
 
     def get(self, request, pk):
         if not self.check_user_role(request.user, technician_roles=['laborantin', 'medecin']):
@@ -757,16 +1330,6 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
             ]
         }
 
-        # for resultat in resultats_actuel:
-        #     data["examen_actuel"][resultat.parametre] = {
-        #         "valeur": resultat.valeur,
-        #         "unite": resultat.unite
-        #     }
-
-        # for resultat in resultats_precedent:
-        #     data["examen_precedent"][resultat.parametre] = {
-        #         "valeur": resultat.valeur,
-        #         "unite": resultat.unite
-        #     }
+        
 
         return Response(data, status=status.HTTP_200_OK)
