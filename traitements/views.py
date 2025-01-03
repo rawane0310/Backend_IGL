@@ -28,11 +28,13 @@ class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
                     "application/json": {
                         "id": 1,
                         "date": "2024-12-31",
-                        "infirmier": 1,
+                        "infirmier_id": 1,
                         "heure": "15:00",
                         "observation": "Patient in good condition.",
                         "soin_realise": "Administered medication.",
-                        "dossier": 12
+                        "dossier": 12,
+                        "infirmier_nom": "snow",
+                        "infirmier_prenom":"john"
                     }
                 }
             ),
@@ -82,8 +84,19 @@ class SoinInfermierCreateView(APIView,CheckUserRoleMixin):
                     Technician.objects.get(id=infirmier.id)
 
                 # Sauvegarde du soin infirmier
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                soin = serializer.save()
+                result = {
+                'id': soin.id,
+                'date': soin.date,
+                'heure': soin.heure,
+                'observation': soin.observation,
+                'soin_realise': soin.soin_realise,
+                'dossier_id': soin.dossier_id,
+                'infirmier_id': soin.infirmier_id,
+                'infirmier_nom': soin.infirmier.nom if soin.infirmier else None,
+                'infirmier_prenom': soin.infirmier.prenom if soin.infirmier else None,
+                }
+                return Response(result, status=status.HTTP_201_CREATED)
 
             except DossierPatient.DoesNotExist:
                 return Response({"error": "Le dossier patient spécifié est introuvable."}, status=status.HTTP_404_NOT_FOUND)
@@ -337,11 +350,13 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
                     "application/json": {
                         "id": 1,
                         "date": "2024-12-31",
-                        "infirmier": 2,
+                        "infirmier_id": 2,
                         "heure": "15:00",
                         "observation": "Patient showing improvement.",
                         "soin_realise": "Wound dressing.",
-                        "dossier": 1
+                        "dossier": 1,
+                        "infirmier_nom": "snow",
+                        "infirmier_prenom":"john"
                     }
                 }
             ),
@@ -389,7 +404,19 @@ class ModifierSoinInfermierAPIView(APIView,CheckUserRoleMixin):
         serializer = SoinInfermierSerializer(soin, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            result = {
+            'id': soin.id,
+            'date': soin.date,
+            'heure': soin.heure,
+            'observation': soin.observation,
+            'soin_realise': soin.soin_realise,
+            'dossier_id': soin.dossier_id,
+            'infirmier_id': soin.infirmier_id,
+            'infirmier_nom': soin.infirmier.nom if soin.infirmier else None,
+            'infirmier_prenom': soin.infirmier.prenom if soin.infirmier else None,
+            }
+            return Response(result, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 

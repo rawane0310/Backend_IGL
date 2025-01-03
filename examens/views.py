@@ -136,7 +136,10 @@ class ExamenBiologiqueView(APIView):
     def check_user_role(self, user, allowed_roles=None):
         """
         Check if the authenticated user has a role of 'technicien' and if their technician role matches allowed roles.
+        
         """
+        
+        
         if user.role != 'technicien':  # Only 'technicien' users are allowed
             return False
 
