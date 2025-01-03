@@ -279,7 +279,7 @@ class SearchPatientByDossier(APIView,CheckUserRoleMixin):
     permission_classes = [IsAuthenticated]
     @swagger_auto_schema(
     operation_summary="Search for a patient by dossier ID",
-    operation_description="This endpoint allows users with roles of 'administratif','patient' and 'medecin' to retrieve detailed information about a patient associated with the specified dossier ID.",
+    operation_description="This endpoint allows users with roles of 'administratif','patient' and 'technicien' to retrieve detailed information about a patient associated with the specified dossier ID.",
     manual_parameters=[
         openapi.Parameter(
             'dossier_id',
@@ -326,7 +326,7 @@ class SearchPatientByDossier(APIView,CheckUserRoleMixin):
         }
     )
     def get(self,request, dossier_id):
-        if not self.check_user_role(request.user, user_roles=['administratif','patient'], technician_roles=['medecin']):
+        if not self.check_user_role(request.user, user_roles=['administratif','patient','technicien']):
             return Response({'error': 'You do not have permission to create a patient user.'},status=status.HTTP_403_FORBIDDEN )
         # Try to retrieve the dossier and associated patient
         dossier = get_object_or_404(DossierPatient, id=dossier_id)
