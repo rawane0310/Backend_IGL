@@ -16,7 +16,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
     
     @swagger_auto_schema(
         operation_summary="Retrieve all certificates",
-        operation_description="This endpoint allows users with the role of  'medecin' to retrieve all certificates.",
+        operation_description="This endpoint allows users with the roles of 'patient' or 'medecin' to retrieve all certificates.",
         responses={
             200: openapi.Response(
                 description="Certificates retrieved successfully.",
@@ -44,7 +44,7 @@ class CertificatView(APIView,CheckUserRoleMixin):
     )
 
     def get(self, request):
-        if not self.check_user_role(request.user,technician_roles=['medecin']):
+        if not self.check_user_role(request.user,['patient'],['medecin']):
             return Response({'error': 'You do not have permission to get this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         certificats = Certificat.objects.all()

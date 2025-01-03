@@ -1239,7 +1239,7 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
     @swagger_auto_schema(
         operation_summary="Retrieve datasets for a patient's biological exam results.",
         operation_description=(
-            "This endpoint allows users with roles 'laborantin' and 'medecin' to retrieve labels and datasets for graphical representation "
+            "This endpoint allows users with roles 'patient','laborantin' and 'medecin' to retrieve labels and datasets for graphical representation "
             "of a patient's biological exam results. The datasets include the current exam "
             "and the most recent previous exam if available."
         ),
@@ -1289,7 +1289,7 @@ class GraphiquePatientView(APIView, CheckUserRoleMixin):
     )
 
     def get(self, request, pk):
-        if not self.check_user_role(request.user, technician_roles=['laborantin', 'medecin']):
+        if not self.check_user_role(request.user,['patient'],['laborantin', 'medecin']):
             return Response({'error': 'You do not have permission to see this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
         examen_actuel = ExamenBiologique.objects.filter(id=pk).first()
