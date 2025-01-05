@@ -1,53 +1,61 @@
-from django.test import TestCase
-from rest_framework.test import APITestCase
+import pytest
 from rest_framework import status
-from .models import ExamenBiologique, Technician, DossierPatient
 from datetime import date
+from accounts.models import ExamenBiologique, Technician, DossierPatient
 
-class ExamenBiologiqueTests(APITestCase):
+@pytest.mark.django_db
+class TestExamenBiologiqueAPI:
 
-    def setUp(self):
-        self.technician = Technician.objects.create(name="Technicien 1", role="Biologiste")
-        self.dossier_patient = DossierPatient.objects.create(name="Patient 1", age=25)
+    @pytest.fixture
+    def technician(self):
+        return Technician.objects.create(name="Technician 1", role="technicien")
 
-    def test_create_examen_biologique(self):
+    @pytest.fixture
+    def dossier_patient(self):
+        return DossierPatient.objects.create(name="Patient 1", age=25)
+
+    @pytest.fixture
+    def examen_biologique(self, technician, dossier_patient):
+        return ExamenBiologique.objects.create(
+            date=date.today(),
+            technicien=technician,
+            laborantin=technician,
+            description="Initial description",
+            dossier_patient=dossier_patient
+        )
+    
+    def test_create_examen_biologique(self, api_client, technician, dossier_patient):
         data = {
             "date": str(date.today()),
-            "technicien": self.technician.id,
-            "terminaison": "Analyse complète",
-            "dossier_patient": self.dossier_patient.id,
+            "technicien": technician.id,
+            "laborantin": technician.id,
+            "description": "Test description",
+            "dossier_patient": dossier_patient.id
         }
 
-        response = self.client.post('/api/examen_biologique/', data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['terminaison'], "Analyse complète")
-        self.assertEqual(response.data['technicien'], self.technician.id)
-        self.assertEqual(response.data['dossier_patient'], self.dossier_patient.id)
+        response = api_client.post('/api/examen_biologique/', data, format='json')
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['description'] == "Test description"
+        assert response.data['technicien'] == technician.id
+        assert response.data['dossier_patient'] == dossier_patient.id
 
-class ResultatExamenTests(APITestCase):
+    def test_read_examen_biologique(self, api_client, examen_biologique):
+        response = api_client.get(f'/api/examen_biologique/{examen_biologique.id}/', format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['description'] == "Initial description"
 
-    def setUp(self):
-        self.technician = Technician.objects.create(name="Technicien 1", role="Biologiste")
-        self.dossier_patient = DossierPatient.objects.create(name="Patient 1", age=25)
-        self.examen = ExamenBiologique.objects.create(
-            date=str(date.today()),
-            technicien=self.technician,
-            terminaison="Analyse complète",
-            dossier_patient=self.dossier_patient
-        )
-
-    def test_create_resultat_examen(self):
-        data = {
-            "parametre": "Glycémie",
-            "valeur": "100",
-            "unite": "mg/dL",
-            "commentaire": "Normal",
-            "examen_biologique": self.examen.id
+    def test_update_examen_biologique(self, api_client, examen_biologique):
+        update_data = {
+            "description": "Updated description"
         }
+        response = api_client.patch(f'/api/examen_biologique/{examen_biologique.id}/', update_data, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['description'] == "Updated description"
 
-        response = self.client.post('/api/resultat_examen/', data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['parametre'], "Glycémie")
-        self.assertEqual(response.data['valeur'], "100")
-        self.assertEqual(response.data['examen_biologique'], self.examen.id)
+    def test_delete_examen_biologique(self, api_client, examen_biologique):
+        response = api_client.delete(f'/api/examen_biologique/{examen_biologique.id}/', format='json')
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
+        # Ensure the object is deleted from the database
+        with pytest.raises(ExamenBiologique.DoesNotExist):
+            ExamenBiologique.objects.get(id=examen_biologique.id)
