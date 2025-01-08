@@ -14,9 +14,7 @@ urlpatterns = [
     path('registerUserPatient/', creatuserPatientView.as_view() , name='creat_patient_and_dossier'),
 
 
-    #pour test fonctionel
-    path('create-dpi/', create_dpi, name='create_dpi'),
-
+   
     
 
 

@@ -33,7 +33,6 @@ urlpatterns = [
     path('logout/', LogoutAPIView.as_view(), name='logout'),
 
 
-    #pour test fonctionel
-    path('loginTest/', login_view, name='loginTest'),
+   
     
 ]
