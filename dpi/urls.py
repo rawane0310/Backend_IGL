@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import  SupprimerDpiAPIView, ModifierDossierAPIView, DossierPatientSearchView,PatientSearchByNSSView , creatuserPatientView,SearchPatientByDossier
 
-from .views import create_dpi
+
 from . import views
 
 urlpatterns = [

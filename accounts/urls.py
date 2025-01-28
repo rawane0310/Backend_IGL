@@ -3,7 +3,7 @@ from .views import TechnicianSearchByRoleView , TechnicianSearchByIDView
 
 from django.urls import path
 from .views import UserView , TechnicianView , PatientView , AdminView ,AdministratifView
-from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView, login_view
+from .views import RegisterUserView , LoginView , TokenRefreshView , LogoutAPIView
 from . import views
  
 

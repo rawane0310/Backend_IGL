@@ -25,7 +25,7 @@ from django.shortcuts import get_object_or_404
 
 ################ test fonctionel######################
 from django.http import JsonResponse
-from .forms import DossierPatientForm
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .serializers import PatientRegistrationSerializer
