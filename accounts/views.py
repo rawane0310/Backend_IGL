@@ -303,7 +303,7 @@ class PatientView(APIView, CheckUserRoleMixin):
     )
     def post(self, request, *args, **kwargs):
 
-        if not self.check_user_role(request.user, ['administratif'],['medecin']):
+        if not self.check_user_role(request.user,['administratif'],['medecin']):
 
             return Response({'error': 'You do not have permission to create this resource.'}, status=status.HTTP_403_FORBIDDEN)
 
