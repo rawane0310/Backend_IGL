@@ -4,11 +4,12 @@ from datetime import date
 from accounts.models import ExamenBiologique, Technician, DossierPatient
 from rest_framework.test import APIClient
 
+@pytest.fixture
+def api_client():
+    return APIClient()
+       
 @pytest.mark.django_db
 class TestExamenBiologiqueAPI:
-    @pytest.fixture
-    def api_client():
-        return APIClient()
 
     @pytest.fixture
     def technician(self):
